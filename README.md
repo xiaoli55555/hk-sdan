@@ -1,4 +1,4 @@
-# HK SDAN
+# Node Console
 
 苹果风格的 Debian VPS 监控面板。管理员管理接入的服务器、创建客户、分配服务器；客户登录后只看自己的 CPU、内存、磁盘、TCP 和 UDP 数据。
 
@@ -19,8 +19,8 @@
 ```bash
 apt update
 apt install -y git
-git clone https://github.com/xiaoli55555/hk-sdan.git /opt/hk-sdan
-cd /opt/hk-sdan
+git clone https://github.com/xiaoli55555/node-console.git /opt/node-console
+cd /opt/node-console
 bash scripts/install.sh
 ```
 
@@ -29,7 +29,7 @@ bash scripts/install.sh
 首次安装通常需数分钟。完成后访问 `https://你的域名/admin`，使用刚设置的管理员账号登录。客户访问网站首页登录。证书申请失败可执行：
 
 ```bash
-cd /opt/hk-sdan
+cd /opt/node-console
 docker compose logs --tail=100 caddy
 ```
 
@@ -79,7 +79,7 @@ Linux/宿主机限制导致 conntrack 不可用时，UDP 显示“—”及原�
 ## 更新
 
 ```bash
-cd /opt/hk-sdan
+cd /opt/node-console
 bash scripts/update.sh
 ```
 
@@ -92,18 +92,18 @@ bash scripts/update.sh
 ## 备份与恢复
 
 ```bash
-cd /opt/hk-sdan
+cd /opt/node-console
 bash scripts/backup.sh
 ```
 
-一致性数据库备份位于 `backups/`。数据库包含密码哈希、登录会话及服务器资料，需妥善保管；建议定期复制到其他机器。另行保存 `.env` 域名配置。Caddy 证书在独立卷，可重新签发。不要执行 `docker compose down -v`，它会移除持久化卷。
+一致性数据库备份位于 `backups/`。数据库包含密码哈希、登录会话及服务器资料，需妥善保管；建议定期复制到其他机器。脚本同时将密码加密密钥保存为同名 `.db.key` 文件（存在该密钥时）。数据库和匹配的密钥必须一起妥善保存；丢失密钥后不能解密客户密码。另行保存 `.env` 域名配置。Caddy 证书在独立卷，可重新签发。不要执行 `docker compose down -v`，它会移除持久化卷。
 
 恢复会覆盖当前数据库，先备份当前状态，确认恢复文件。停止应用后，将备份写回卷（将路径替换成你的备份）：
 
 ```bash
-cd /opt/hk-sdan
+cd /opt/node-console
 docker compose stop app
-docker compose run --rm -T -v "$PWD/backups:/restore:ro" --entrypoint python app -c 'import sqlite3; source=sqlite3.connect("file:/restore/YOUR_BACKUP.db?mode=ro",uri=True); dest=sqlite3.connect("/data/panel.db"); source.backup(dest); dest.execute("DELETE FROM sessions"); dest.commit(); dest.close(); source.close()'
+docker compose run --rm -T --user 0 -v "$PWD/backups:/restore:ro" --entrypoint python app -c 'import sqlite3,shutil,os; from pathlib import Path; source=sqlite3.connect("file:/restore/YOUR_BACKUP.db?mode=ro",uri=True); dest=sqlite3.connect("/data/panel.db"); source.backup(dest); dest.execute("DELETE FROM sessions"); dest.commit(); dest.close(); source.close(); key=Path("/restore/YOUR_BACKUP.db.key"); shutil.copyfile(key,"/data/credential.key") if key.exists() else None; paths=[Path("/data/panel.db")]+([Path("/data/credential.key")] if Path("/data/credential.key").exists() else []); [(os.chown(p,10001,10001),os.chmod(p,0o600)) for p in paths]'
 docker compose up -d
 ```
 
@@ -116,7 +116,7 @@ docker compose up -d
 在面板 VPS 上执行，交互设置密码，立即撤销该账号所有登录会话：
 
 ```bash
-cd /opt/hk-sdan
+cd /opt/node-console
 bash scripts/admin.sh
 ```
 
@@ -153,14 +153,14 @@ node --check web/app.js
 先更新面板：
 
 ```bash
-cd /opt/hk-sdan
+cd /opt/node-console
 bash scripts/update.sh
 ```
 
 再到**每台被管理的 Debian VPS**以 root 执行（含需要监控面板本机时的面板 VPS）：
 
 ```bash
-curl -fsS --proto '=https' https://hksdan.top/agent-update.sh -o /tmp/hk-sdan-agent-update.sh
+curl -fsS --proto '=https' https://panel.example.com/agent-update.sh -o /tmp/hk-sdan-agent-update.sh
 bash /tmp/hk-sdan-agent-update.sh
 ```
 
@@ -197,15 +197,15 @@ bash /tmp/hk-sdan-agent-update.sh
 
 ## 独立管理员入口
 
-- 客户入口：`https://hksdan.top/`，仅接受客户账号。
-- 默认管理员入口：`https://hksdan.top/admin`，仅接受管理员账号。
-- 管理员登录 → 后台设置 → 管理员登录入口，可将 `/admin` 改为其他路径，例如 `/manage/hksdan-123`。
+- 客户入口：`https://panel.example.com/`，仅接受客户账号。
+- 默认管理员入口：`https://panel.example.com/admin`，仅接受管理员账号。
+- 管理员登录 → 后台设置 → 管理员登录入口，可将 `/admin` 改为其他路径，例如 `/manage/panel-123`。
 - 修改后旧路径返回 404，所有管理员会话失效，并自动转到新路径重新登录；客户登录不受影响。请立即收藏新地址。
 - 不在客户页面展示管理入口链接。入口路径不是密码替代品，仍需使用强密码。
 - 忘记当前管理路径，在 VPS 执行：
 
 ```bash
-cd /opt/hk-sdan
+cd /opt/node-console
 docker compose exec -T app python server.py entry
 ```
 
@@ -213,7 +213,7 @@ docker compose exec -T app python server.py entry
 
 ## 客户列表快捷操作
 
-客户列表提供复制账号、复制密码和分配服务器。复制密码仅适用于本次页面创建成功的客户：密码暂存在浏览器内存，刷新或退出后清空，不在数据库存储可还原密码。旧客户无法复制原密码。服务器分配可勾选空闲服务器或解除当前客户分配，其他客户名下的机器需先解除原分配。
+客户列表提供复制账号、复制密码和分配服务器。管理员可随时查看、复制和修改客户用户名及密码。新建或修改后的客户密码加密保存，刷新或重新登录后仍可读取。旧客户仅有密码哈希，原密码不能还原，需管理员先设置一次新密码。服务器分配可勾选空闲服务器或解除当前客户分配，其他客户名下的机器需先解除原分配。
 
 
 ## CMHK 重启换 IP：完整历史（v0.2.1）
@@ -239,3 +239,13 @@ CPU、内存、TCP、UDP 的历史从本次面板更新后开始保存，保留 
 只需更新面板 `bash scripts/update.sh`，之后添加服务器或点击“对接命令”即可取得新版单行命令。既有已连接的服务器无需重新接入。手动运行 `/agent-install.sh` 仍可使用交互式填写地址、密钥的模式。
 
 如果凭证过期或已使用，请重新生成命令。客户端安装涉及 apt 下载，若超过 10 分钟才到凭证兑换步骤也需要重新生成。接入服务端先验证一次性凭证，再生成只属于该服务器的长期密钥；长期密钥写入目标 VPS 的 600 权限配置文件，不打印到终端。
+
+## 管理员查看及修改客户凭据（v0.2.4）
+
+客户列表保留“创建客户”和“分配服务器”，并提供“复制账号”“查看密码”“复制密码”“修改账号／密码”。不再限制为创建当次可复制。
+
+新建、管理员重设、客户自行修改后的密码，同时保存登录用哈希和加密后的可恢复副本。只有通过鉴权及 CSRF 检查的管理员能读取，读取操作写入审计日志。密码不存入浏览器 localStorage，关闭查看弹窗会清空其内容。
+
+加密使用 Fernet，密钥位于应用数据卷 `/data/credential.key`，与数据库分开存放，不提交 GitHub。后续升级保留数据卷；备份脚本同时备份数据库和加密密钥。保管好匹配的 `.db` 与 `.db.key` 文件。只有数据库备份、没有对应密钥，就不能恢复这些可查看密码。
+
+原有仅含哈希的客户密码不能逆向恢复，需设置一次新密码；原账号仍可用原密码登录。管理员修改客户用户名或密码后，客户现有登录会被撤销，服务器分配不变。

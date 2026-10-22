@@ -8,4 +8,4 @@ rm -f /etc/systemd/system/hk-sdan-agent.service
 systemctl daemon-reload
 rm -f /opt/hk-sdan-agent/agent.py /etc/hk-sdan-agent/config.json
 rmdir /opt/hk-sdan-agent /etc/hk-sdan-agent 2>/dev/null || true
-echo '已卸载 HK SDAN 客户端，不更改其他服务。'
+echo '已卸载 Node Console 客户端，不更改其他服务。'

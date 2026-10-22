@@ -1,5 +1,5 @@
 import unittest, tempfile, os, json, time, importlib.util
-os.environ['DATA_DIR']=tempfile.mkdtemp(prefix='hksdan-test-')
+os.environ['DATA_DIR']=tempfile.mkdtemp(prefix='console-test-')
 os.environ['COOKIE_SECURE']='0'
 import server
 from werkzeug.security import generate_password_hash
@@ -221,6 +221,42 @@ class PanelTest(unittest.TestCase):
         newer=self.post(f'/api/servers/{sid}/install-ticket').json['ticket']
         self.assertEqual(self.admin.post('/api/agent/enroll',json={'ticket':r['ticket']}).status_code,401)
         self.assertEqual(self.admin.post('/api/agent/enroll',json={'ticket':newer}).status_code,200)
+
+    def test_admin_can_retrieve_and_edit_client_credentials(self):
+        created=self.post('/api/users',{'username':'new-client','password':'initial-password-123'})
+        self.assertEqual(created.status_code,201)
+        user=next(u for u in self.admin.get('/api/users').json if u['username']=='new-client');uid=user['id']
+        creds=self.post(f'/api/users/{uid}/credentials').json
+        self.assertEqual(creds['password'],'initial-password-123')
+        self.assertNotIn('password',user)
+        with server.connect() as db:
+            row=db.execute('SELECT password,password_encrypted FROM users WHERE id=?',(uid,)).fetchone()
+            self.assertNotEqual(row['password'],'initial-password-123')
+            self.assertNotIn('initial-password-123',row['password_encrypted'])
+        # A fresh client object can log in, but cannot retrieve admin-only secrets.
+        c=server.app.test_client();self.assertEqual(c.post('/api/login',json={'username':'new-client','password':'initial-password-123'}).status_code,200)
+        csrf=c.get('/api/me').json['csrf']
+        self.assertEqual(c.post(f'/api/users/{uid}/credentials',json={},headers={'X-CSRF-Token':csrf}).status_code,403)
+        changed=self.admin.patch(f'/api/users/{uid}',json={'username':'renamed-client','password':'updated-password-456'},headers={'X-CSRF-Token':self.tokens['admin']})
+        self.assertEqual(changed.status_code,200);self.assertEqual(c.get('/api/me').status_code,401)
+        self.assertEqual(c.post('/api/login',json={'username':'renamed-client','password':'updated-password-456'}).status_code,200)
+        self.assertEqual(self.post(f'/api/users/{uid}/credentials').json['password'],'updated-password-456')
+        self.assertEqual(self.admin.patch(f'/api/users/{uid}',json={'username':'admin'},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,409)
+        self.assertEqual(self.post('/api/users/'+str(self.admin.get('/api/me').json['id'])+'/credentials').status_code,404)
+    def test_legacy_password_needs_reset_and_self_change_updates_encryption(self):
+        uid=self.alice.get('/api/me').json['id']
+        self.assertIsNone(self.post(f'/api/users/{uid}/credentials').json['password'])
+        self.assertEqual(self.alice.post('/api/password',json={'old':'correct-password-123','new':'self-updated-password'},headers={'X-CSRF-Token':self.tokens['alice']}).status_code,200)
+        self.assertEqual(self.post(f'/api/users/{uid}/credentials').json['password'],'self-updated-password')
+    def test_encryption_key_persistence_and_missing_key_protection(self):
+        from credential_store import load_cipher
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as folder:
+            cipher=load_cipher(folder);encrypted=cipher.encrypt(b'test-only')
+            self.assertEqual(load_cipher(folder,True).decrypt(encrypted),b'test-only')
+            self.assertEqual((Path(folder)/'credential.key').stat().st_mode & 0o777,0o600)
+            (Path(folder)/'credential.key').unlink()
+            with self.assertRaises(RuntimeError):load_cipher(folder,True)
 
 class NetworkDeltaTest(unittest.TestCase):
     def test_midnight_reset_and_missing(self):

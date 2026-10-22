@@ -1,8 +1,9 @@
-"""HK SDAN: authenticated multi-tenant monitoring, SQLite, outbound-only agents."""
+"""Node Console: authenticated multi-tenant monitoring, SQLite, outbound-only agents."""
 import os, sqlite3, secrets, hashlib, time, json, re, math, sys, ipaddress
 from pathlib import Path
 from functools import wraps
 from network import record_network, traffic_summary
+from credential_store import load_cipher, InvalidToken
 from flask import Flask, request, jsonify, g, send_from_directory, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -52,6 +53,8 @@ def init():
         PRAGMA user_version=7;
         ''')
 
+        if 'password_encrypted' not in [r[1] for r in db.execute('PRAGMA table_info(users)')]:
+            db.execute('ALTER TABLE users ADD COLUMN password_encrypted TEXT')
         if 'entry' not in [r[1] for r in db.execute('PRAGMA table_info(sessions)')]:
             db.execute("ALTER TABLE sessions ADD COLUMN entry TEXT NOT NULL DEFAULT ''")
 
@@ -60,8 +63,8 @@ def admin_path():
 
 def entry_context():
     path=request.headers.get('X-Panel-Entry','')
-    if not path:return '', 'client', 'hksdan'
-    if path==admin_path():return path, 'admin', 'hksdan_admin'
+    if not path:return '', 'client', 'node_console'
+    if path==admin_path():return path, 'admin', 'node_console_admin'
     return None,None,None
 
 def digest(s): return hashlib.sha256(s.encode()).hexdigest()
@@ -120,7 +123,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.3')
+    return jsonify(ok=True, version='0.2.4')
 
 @app.post('/api/login')
 def login():
@@ -183,7 +186,7 @@ def password():
     if not isinstance(new,str) or not 12<=len(new)<=128: return error('新密码需为 12～128 位')
     if not isinstance(old,str) or not check_password_hash(g.user['password'],old): return error('原密码不正确',403)
     with connect() as db:
-        db.execute('UPDATE users SET password=? WHERE id=?',(generate_password_hash(new),g.user['id']))
+        db.execute('UPDATE users SET password=?,password_encrypted=? WHERE id=?',(generate_password_hash(new),CIPHER.encrypt(new.encode()).decode() if g.user['role']=='client' else None,g.user['id']))
         db.execute('DELETE FROM sessions WHERE user_id=?',(g.user['id'],));audit(db,'修改登录密码')
     r=jsonify(ok=True);r.delete_cookie(g.cookie,secure=SECURE);return r
 
@@ -200,9 +203,40 @@ def add_user():
     if not isinstance(pw,str) or not 12<=len(pw)<=128: return error('密码需为 12～128 位')
     try:
         with connect() as db:
-            db.execute('INSERT INTO users(username,password,role) VALUES(?,?,?)',(name,generate_password_hash(pw),'client'));audit(db,'创建客户 '+name)
+            db.execute('INSERT INTO users(username,password,role,password_encrypted) VALUES(?,?,?,?)',(name,generate_password_hash(pw),'client',CIPHER.encrypt(pw.encode()).decode()));audit(db,'创建客户 '+name)
     except sqlite3.IntegrityError: return error('账号已存在',409)
     return jsonify(ok=True),201
+
+@app.post('/api/users/<int:uid>/credentials')
+@auth(True)
+def client_credentials(uid):
+    with connect() as db:
+        user=db.execute("SELECT username,password_encrypted FROM users WHERE id=? AND role='client'",(uid,)).fetchone()
+        if not user:return error('客户不存在',404)
+        password=None
+        if user['password_encrypted']:
+            try:password=CIPHER.decrypt(user['password_encrypted'].encode()).decode()
+            except InvalidToken:return error('密码解密失败，请检查数据库匹配的 credential.key',500)
+        audit(db,f'查看客户 #{uid} 凭据')
+    return jsonify(username=user['username'],password=password,recoverable=password is not None)
+
+@app.patch('/api/users/<int:uid>')
+@auth(True)
+def edit_client(uid):
+    data=body();pw=data.get('password')
+    if pw is not None and (not isinstance(pw,str) or not 12<=len(pw)<=128):return error('密码需为 12～128 位')
+    try:
+        with connect() as db:
+            user=db.execute("SELECT username FROM users WHERE id=? AND role='client'",(uid,)).fetchone()
+            if not user:return error('客户不存在',404)
+            name=data.get('username',user['username'])
+            if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9_.@-]{3,64}',name):return error('账号需为 3～64 位英文、数字或 _.@-')
+            if pw is None:db.execute('UPDATE users SET username=? WHERE id=?',(name,uid))
+            else:db.execute('UPDATE users SET username=?,password=?,password_encrypted=? WHERE id=?',(name,generate_password_hash(pw),CIPHER.encrypt(pw.encode()).decode(),uid))
+            db.execute('DELETE FROM sessions WHERE user_id=?',(uid,))
+            audit(db,f'修改客户 #{uid} 账号或密码')
+    except sqlite3.IntegrityError:return error('账号已存在',409)
+    return jsonify(ok=True,username=name)
 
 @app.get('/api/servers')
 @auth()
@@ -462,6 +496,8 @@ def static(path):
 def too_large(e): return error('请求内容过大',413)
 
 init()
+with connect() as cipher_db:
+    CIPHER=load_cipher(DATA,bool(cipher_db.execute('SELECT 1 FROM users WHERE password_encrypted IS NOT NULL LIMIT 1').fetchone()))
 if __name__=='__main__':
     import argparse, getpass
     parser=argparse.ArgumentParser();parser.add_argument('command',choices=['admin','backup','entry']);parser.add_argument('target',nargs='?');args=parser.parse_args()
@@ -476,9 +512,10 @@ if __name__=='__main__':
         if not re.fullmatch(r'[A-Za-z0-9_.@-]{3,64}',username) or not 12<=len(pw)<=128:sys.exit('账号或密码格式不正确')
         if pw!=getpass.getpass('再输入一次密码: '):sys.exit('两次密码不一致')
         with connect() as db:
-            db.execute("INSERT INTO users(username,password,role) VALUES(?,?,'admin') ON CONFLICT(username) DO UPDATE SET password=excluded.password,role='admin'",(username,generate_password_hash(pw)))
+            db.execute("INSERT INTO users(username,password,role) VALUES(?,?,'admin') ON CONFLICT(username) DO UPDATE SET password=excluded.password,role='admin',password_encrypted=NULL",(username,generate_password_hash(pw)))
             uid=db.execute('SELECT id FROM users WHERE username=?',(username,)).fetchone()[0]
             db.execute('DELETE FROM sessions WHERE user_id=?',(uid,))
         print('管理员已配置')
+
 
 

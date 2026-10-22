@@ -54,7 +54,7 @@ PY
 unset AGENT_TOKEN
 cat > /etc/systemd/system/hk-sdan-agent.service <<'EOF'
 [Unit]
-Description=HK SDAN monitoring and reboot agent
+Description=Node Console monitoring and reboot agent
 After=network-online.target
 Wants=network-online.target
 [Service]
