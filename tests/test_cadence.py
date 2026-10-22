@@ -31,3 +31,19 @@ class CadenceTest(unittest.TestCase):
         self.assertIsNone(sampler.snapshot()['egress_ips']);self.assertTrue(sampler.snapshot()['egress_error'])
         self.assertEqual(opener.open.call_count,2)
         self.assertEqual(opener.open.call_args.kwargs['timeout'],3)
+
+class UDPSocketTest(unittest.TestCase):
+    def test_all_ss_socket_rows_are_counted(self):
+        response=MagicMock(returncode=0,stdout='UNCONN 0 0 0.0.0.0:53 0.0.0.0:*\n\nESTAB 0 0 [::1]:40 [::1]:50\n')
+        with patch.object(collector.shutil,'which',return_value='/usr/bin/ss'),patch.object(collector.subprocess,'run',return_value=response) as run:
+            self.assertEqual(collector.udp_count(),(2,''))
+            self.assertEqual(run.call_args.args[0],['ss','-u','-a','-n','-H'])
+    def test_no_sockets_is_zero_but_command_failure_is_unavailable(self):
+        with patch.object(collector.shutil,'which',return_value='/usr/bin/ss'),patch.object(collector.subprocess,'run',return_value=MagicMock(returncode=0,stdout='')) as run:
+            self.assertEqual(collector.udp_count(),(0,''))
+            run.return_value.returncode=1
+            self.assertIsNone(collector.udp_count()[0])
+    def test_missing_ss_or_timeout_never_becomes_zero(self):
+        with patch.object(collector.shutil,'which',return_value=None):self.assertIsNone(collector.udp_count()[0])
+        with patch.object(collector.shutil,'which',return_value='/usr/bin/ss'),patch.object(collector.subprocess,'run',side_effect=collector.subprocess.TimeoutExpired('ss',5)):
+            self.assertIsNone(collector.udp_count()[0])

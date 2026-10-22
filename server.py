@@ -123,7 +123,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.6')
+    return jsonify(ok=True, version='0.2.7')
 
 @app.post('/api/login')
 def login():
@@ -369,10 +369,15 @@ def report():
                 if type(stamp) is not int or not 0<=stamp<=int(time.time())+60:return error('采集时间格式无效')
                 clean[stamp_key]=stamp
         clean['capabilities']=['reboot'] if isinstance(d.get('capabilities'),list) and 'reboot' in d['capabilities'] else []
-        clean['network_method']='TCP ESTABLISHED sockets; UDP conntrack original tuples (unreplied included)'
+        clean['udp_method']='socket' if d.get('udp_method')=='socket' else 'conntrack'
+        clean['network_method']='TCP ESTABLISHED sockets; UDP '+clean['udp_method']
         db.execute('BEGIN IMMEDIATE')
         current=db.execute('SELECT * FROM servers WHERE id=? AND agent_hash=?',(row['id'],token_hash)).fetchone()
         if not current:return error('采集密钥已失效',401)
+        previous_method=(json.loads(current['metrics']) if current['metrics'] else {}).get('udp_method','conntrack')
+        if current['metrics'] and previous_method!=clean['udp_method']:
+            # Different units must not share one historical curve.
+            db.execute('UPDATE metric_points SET udp=NULL WHERE server_id=?',(row['id'],))
         clean=record_network(db,current,clean,int(time.time()))
         previous=json.loads(current['metrics']) if current['metrics'] else {}
         if clean.get('uptime') is not None and previous.get('uptime') is not None and clean['uptime']<previous['uptime']:

@@ -18,6 +18,17 @@ class PanelTest(unittest.TestCase):
             self.assertEqual(client.post('/api/login',json={'username':name,'password':'correct-password-123'}).status_code,200)
             self.tokens[name]=client.get('/api/me').json['csrf']
     def post(self,path,data=None):return self.admin.post(path,json=data or {},headers={'X-CSRF-Token':self.tokens['admin']})
+    def test_udp_unit_change_removes_only_old_udp_history(self):
+        result=self.post('/api/servers',{'name':'udp-test'}).json
+        sid=result['id'];headers={'Authorization':'Bearer '+result['token']}
+        self.assertEqual(self.admin.post('/api/agent/report',json={'udp':9,'cpu_percent':30},headers=headers).status_code,200)
+        self.assertEqual(self.admin.post('/api/agent/report',json={'udp':177,'cpu_percent':40,'udp_method':'socket'},headers=headers).status_code,200)
+        with server.connect() as db:
+            points=db.execute('SELECT cpu,udp FROM metric_points WHERE server_id=?',(sid,)).fetchall()
+            self.assertTrue(points);self.assertTrue(all(p['udp'] is None for p in points));self.assertEqual(points[0]['cpu'],30)
+        current=self.admin.get('/api/servers').json[0]['metrics']
+        self.assertEqual(current['udp'],177);self.assertEqual(current['udp_method'],'socket')
+
     def test_tenant_boundary(self):
         r=self.post('/api/servers',{'name':'HK-01'});self.assertEqual(r.status_code,201);sid=r.json['id'];token=r.json['token']
         alice_id=self.alice.get('/api/me').json['id']

@@ -78,4 +78,4 @@ EOF
 systemctl daemon-reload
 systemctl enable --now hk-sdan-agent
 systemctl restart hk-sdan-agent
-echo '客户端已安装，每 15 秒上报；查看状态：systemctl status hk-sdan-agent'
+echo '客户端已安装，资源每 5 秒上报，TCP／UDP 每 15 秒采集；查看状态：systemctl status hk-sdan-agent'

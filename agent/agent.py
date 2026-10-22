@@ -15,14 +15,13 @@ def tcp_count(root=Path('/proc')):
     return count if found else None
 
 def udp_count():
-    # conntrack counts UDP flows rather than listening UDP sockets.
-    # Each original/reply pair is one entry, not two sessions.
-    if not shutil.which('conntrack'):return None,'未安装 conntrack，UDP 会话数不可用'
+    # Match ss -uanH: IPv4/IPv6 UDP sockets in all states, not conntrack flows.
+    if not shutil.which('ss'):return None,'未安装 ss（iproute2），UDP socket 数不可用'
     try:
-        r=subprocess.run(['conntrack','-L','-p','udp','-o','extended'],capture_output=True,text=True,timeout=5,check=False)
-        if r.returncode:return None,'conntrack 不可用（权限或内核不支持）'
-        return sum(1 for line in r.stdout.splitlines() if ' udp ' in ' '+line+' '),' '
-    except (OSError,subprocess.TimeoutExpired):return None,'conntrack 采集超时或失败'
+        r=subprocess.run(['ss','-u','-a','-n','-H'],capture_output=True,text=True,timeout=5,check=False)
+        if r.returncode:return None,'ss UDP socket 采集失败'
+        return sum(1 for line in r.stdout.splitlines() if line.strip()),''
+    except (OSError,subprocess.TimeoutExpired):return None,'ss UDP socket 采集超时或失败'
 
 def public_addresses():
     try:
@@ -91,7 +90,7 @@ def collect(previous=None,connections=None):
     return {'cpu_percent':cpu,'memory_percent':round(100*(1-mem.get('MemAvailable',mem.get('MemFree',0))/mem['MemTotal']),1),
             'memory_total':mem['MemTotal'],'disk_percent':round(100*disk.used/disk.total,1),'disk_total':disk.total,
             'uptime':int(float(Path('/proc/uptime').read_text().split()[0])), 'rx_bytes':rx,'tx_bytes':tx,
-            'connections_sampled':connections.sampled_at if connections else int(time.time()),'capabilities':['reboot'],'tcp':tcp,'udp':udp,'public_ips':addresses,'ip_error':ip_error,'network_error':err.strip(),'hostname':socket.gethostname(),'os':os_name,'kernel':platform.release()},now
+            'udp_method':'socket','connections_sampled':connections.sampled_at if connections else int(time.time()),'capabilities':['reboot'],'tcp':tcp,'udp':udp,'public_ips':addresses,'ip_error':ip_error,'network_error':err.strip(),'hostname':socket.gethostname(),'os':os_name,'kernel':platform.release()},now
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--once',action='store_true');p.add_argument('--config',default='/etc/hk-sdan-agent/config.json');a=p.parse_args()

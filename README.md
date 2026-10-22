@@ -52,7 +52,7 @@ docker compose up -d
 
 命令中使用 10 分钟有效的一次性接入凭证，不包含长期采集密钥。凭证只能成功兑换一次，重新生成后旧命令失效。生成命令本身不影响已安装的客户端，成功兑换后旧采集密钥失效。不要向其他人分享接入命令，也不要在不同 VPS 上重复使用同一台服务器的命令。
 
-客户端采集监控信息，并仅接受面板授权的正常重启任务，不提供任意远程命令执行。通过 HTTPS 主动向面板上报，不需要为客户端开放任何入站端口。配置保存在 `/etc/hk-sdan-agent/config.json`，权限 600。客户端启动使用 root，systemd 限制能力范围，UDP conntrack 查询保留 CAP_NET_ADMIN，重启功能保留 CAP_SYS_BOOT。
+客户端采集监控信息，并仅接受面板授权的正常重启任务，不提供任意远程命令执行。通过 HTTPS 主动向面板上报，不需要为客户端开放任何入站端口。配置保存在 `/etc/hk-sdan-agent/config.json`，权限 600。客户端启动使用 root，systemd 限制能力范围，旧版 UDP conntrack 查询使用 CAP_NET_ADMIN（新版 UDP socket 不依赖 conntrack），重启功能保留 CAP_SYS_BOOT。
 
 ```bash
 systemctl status hk-sdan-agent
@@ -69,10 +69,10 @@ journalctl -u hk-sdan-agent -n 50 --no-pager
 | 内存 | `(MemTotal - MemAvailable) / MemTotal` |
 | 磁盘 | 根目录所在文件系统的已用比例 |
 | TCP | 当前网络命名空间中 `/proc/net/tcp` 与 `tcp6` 的 ESTABLISHED socket 数量，不含 TIME_WAIT 和监听 socket |
-| UDP | `conntrack -L -p udp -o extended` 的 UDP 条目数量，包含未应答条目；原／回复方向合计为一个条目，不是 UDP 监听端口数 |
+| UDP | v0.2.7 起使用 `ss -u -a -n -H` 统计 IPv4＋IPv6 UDP socket，包含监听及未连接 socket；不是 conntrack 会话数 |
 | 累计网卡流量 | 除 lo 外网卡字节计数之和；可能因桥接／虚拟网卡重复计量，非供应商账单或月流量 |
 
-Linux/宿主机限制导致 conntrack 不可用时，UDP 显示“—”及原因，不回退成不等价的 UDP socket 数。与其他监控软件的数字可能因统计口径不同而不同。TCP 也可能包含客户端本身与面板的连接。
+新版 ss 不可用或采集失败时，UDP 显示“—”及原因。与其他监控软件的数字可能因统计口径不同而不同。TCP 也可能包含客户端本身与面板的连接。
 
 浏览器每 5 秒刷新；超过 60 秒没有上报标记离线。列表与详情隐藏离线旧数值，保留最后采集时间。首页合计只汇总当前账号可见、在线且该项采集成功的服务器，不把缺失值当成零。
 
@@ -279,3 +279,10 @@ bash /tmp/node-agent-update.sh
 ```
 
 已有密钥、分配及服务名称不变。只更新面板时，旧客户端仍保持原有 15 秒上报。升级前后均应以 VPS 实际 CPU／内存占用判断负担，未承诺固定占用比例。
+
+
+## UDP socket 口径（v0.2.7）
+
+根据实际 VPS 上 `ss -uanH` 返回 177、conntrack 返回 0 的排查结果，UDP 改用 `ss -u -a -n -H` 的非空行数。此口径包含 IPv4／IPv6、监听与未连接 socket，不代表实际 UDP 对端会话数；NY 的内部实现未验证。每 15 秒采集，页面每 5 秒更新。
+
+必须先更新面板，再更新每台 VPS 的采集客户端。旧客户端继续上报 conntrack 数量，客户端升级后才切换。面板检测到统计口径变化时，清空该服务器旧曲线的 UDP 数值，保留 CPU、内存和带宽等历史；UDP 曲线重新积累，避免混合两种口径。无需卸载 conntrack 或改变防火墙。
