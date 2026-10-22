@@ -181,12 +181,30 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.bob.get(f'/api/servers/{sid}/ip-history?before='+str(first['next_cursor'])).status_code,404)
         self.assertEqual(self.alice.get(f'/api/servers/{sid}/ip-history?before=invalid').status_code,400)
 
+    def test_metric_history_scope_values_and_validation(self):
+        r=self.post('/api/servers',{'name':'metric-node'}).json;sid=r['id'];h={'Authorization':'Bearer '+r['token']}
+        uid=self.alice.get('/api/me').json['id']
+        self.admin.patch(f'/api/servers/{sid}',json={'owner_id':uid},headers={'X-CSRF-Token':self.tokens['admin']})
+        self.assertEqual(self.admin.post('/api/agent/report',json={'cpu_percent':25,'memory_percent':60,'tcp':1234,'udp':20},headers=h).status_code,200)
+        data=self.alice.get(f'/api/servers/{sid}/metrics').json
+        self.assertEqual(data['current']['tcp'],1234)
+        self.assertEqual(data['points'][-1]['cpu'],25)
+        self.assertEqual(data['points'][-1]['memory'],60)
+        self.assertEqual(data['points'][-1]['udp'],20)
+        self.assertEqual(self.bob.get(f'/api/servers/{sid}/metrics').status_code,404)
+        self.assertEqual(self.alice.get(f'/api/servers/{sid}/metrics?range=invalid').status_code,400)
+        self.assertEqual(self.alice.get(f'/api/servers/{sid}/metrics?range=24h').status_code,200)
+        with server.connect() as db:db.execute('UPDATE servers SET seen=? WHERE id=?',(int(time.time())-100,sid))
+        offline=self.alice.get(f'/api/servers/{sid}/metrics').json
+        self.assertFalse(offline['online']);self.assertEqual(offline['current'],{})
+        self.assertTrue(offline['points'])
+
 class NetworkDeltaTest(unittest.TestCase):
     def test_midnight_reset_and_missing(self):
         import sqlite3,datetime
         from network import record_network,TZ
         db=sqlite3.connect(':memory:')
-        db.executescript('CREATE TABLE traffic_daily(server_id INTEGER,day TEXT,rx INTEGER,tx INTEGER,PRIMARY KEY(server_id,day));CREATE TABLE network_points(server_id INTEGER,stamp INTEGER,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));')
+        db.executescript('CREATE TABLE metric_points(server_id INTEGER,stamp INTEGER,cpu REAL,memory REAL,tcp REAL,udp REAL,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));CREATE TABLE traffic_daily(server_id INTEGER,day TEXT,rx INTEGER,tx INTEGER,PRIMARY KEY(server_id,day));CREATE TABLE network_points(server_id INTEGER,stamp INTEGER,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));')
         start=int(datetime.datetime(2026,10,22,23,59,50,tzinfo=TZ).timestamp())
         old={'rx_bytes':1000,'tx_bytes':2000,'uptime':100}
         row={'id':1,'seen':start,'metrics':json.dumps(old)}

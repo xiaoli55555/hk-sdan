@@ -45,7 +45,9 @@ def init():
         CREATE INDEX IF NOT EXISTS commands_pending ON commands(server_id,status,created);
         CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
         INSERT OR IGNORE INTO settings(key,value) VALUES('admin_path','/admin');
-        PRAGMA user_version=5;
+        CREATE TABLE IF NOT EXISTS metric_points(server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+          stamp INTEGER NOT NULL,cpu REAL,memory REAL,tcp REAL,udp REAL,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));
+        PRAGMA user_version=6;
         ''')
 
         if 'entry' not in [r[1] for r in db.execute('PRAGMA table_info(sessions)')]:
@@ -110,7 +112,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.1')
+    return jsonify(ok=True, version='0.2.2')
 
 @app.post('/api/login')
 def login():
@@ -365,6 +367,21 @@ def network_history(sid):
         return jsonify(points=[dict(p) for p in points],traffic=traffic_summary(db,sid,now),
                        rx_bps=metrics.get('rx_bps') if online else None,tx_bps=metrics.get('tx_bps') if online else None,
                        online=online,seen=row['seen'],uptime=metrics.get('uptime') if online else None,now=now,bucket=bucket,seconds=seconds)
+
+@app.get('/api/servers/<int:sid>/metrics')
+@auth()
+def metric_history(sid):
+    now=int(time.time());period=request.args.get('range','1h')
+    if period not in ('1h','24h'):return error('时间范围无效')
+    seconds,bucket=(3600,15) if period=='1h' else (86400,360)
+    with connect() as db:
+        row=db.execute('SELECT owner_id,metrics,seen FROM servers WHERE id=?',(sid,)).fetchone()
+        if not row or (g.user['role']!='admin' and row['owner_id']!=g.user['id']):return error('服务器不存在',404)
+        points=db.execute('SELECT CAST(stamp/? AS INTEGER)*? AS stamp,AVG(cpu) AS cpu,AVG(memory) AS memory,AVG(tcp) AS tcp,AVG(udp) AS udp,AVG(rx_bps) AS rx_bps,AVG(tx_bps) AS tx_bps FROM metric_points WHERE server_id=? AND stamp>=? GROUP BY CAST(stamp/? AS INTEGER) ORDER BY stamp',(bucket,bucket,sid,now-seconds,bucket)).fetchall()
+        metrics=json.loads(row['metrics']) if row['metrics'] else {};online=bool(row['seen'] and now-row['seen']<=60)
+        return jsonify(points=[dict(p) for p in points],current=metrics if online else {},online=online,seen=row['seen'],now=now,
+                       bucket=bucket,seconds=seconds,traffic=traffic_summary(db,sid,now),
+                       rx_bps=metrics.get('rx_bps') if online else None,tx_bps=metrics.get('tx_bps') if online else None)
 
 @app.get('/api/servers/<int:sid>/ip-history')
 @auth()

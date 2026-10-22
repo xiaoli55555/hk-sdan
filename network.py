@@ -37,6 +37,9 @@ def record_network(db,row,metrics,now):
                        (row['id'],day_key(start),part_rx,part_tx))
             allocated_rx+=part_rx;allocated_tx+=part_tx;start=stop
     db.execute('INSERT OR REPLACE INTO network_points(server_id,stamp,rx_bps,tx_bps) VALUES(?,?,?,?)',(row['id'],now,metrics['rx_bps'],metrics['tx_bps']))
+    db.execute('INSERT OR REPLACE INTO metric_points(server_id,stamp,cpu,memory,tcp,udp,rx_bps,tx_bps) VALUES(?,?,?,?,?,?,?,?)',
+               (row['id'],now,metrics.get('cpu_percent'),metrics.get('memory_percent'),metrics.get('tcp'),metrics.get('udp'),metrics['rx_bps'],metrics['tx_bps']))
+    db.execute('DELETE FROM metric_points WHERE server_id=? AND stamp<?',(row['id'],now-7*86400))
     # Only prune the reporting node; bounded indexed deletes instead of full scans.
     db.execute('DELETE FROM network_points WHERE server_id=? AND stamp<?',(row['id'],now-7*86400))
     db.execute('DELETE FROM traffic_daily WHERE server_id=? AND day<?',(row['id'],day_key(now-400*86400)))
