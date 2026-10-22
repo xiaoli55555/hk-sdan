@@ -27,3 +27,7 @@ dialog:has(.metric-window){width:960px;border-radius:24px;background:#fafbfd}.me
 #serversPage .stats span{font-size:9px;line-height:1.25}
 #serversPage .network-stats strong{font-size:20px}
 @media(max-width:600px){#serversPage .stats{gap:8px}#serversPage .stats>.card{padding:8px 10px}#serversPage .stats strong{font-size:21px}#serversPage .network-stats strong{font-size:18px}}
+
+/* Public addresses stay prominent in both administrator and customer lists. */
+#serverRows .server-ip{display:table;width:fit-content;max-width:300px;margin-top:9px;padding:7px 10px;background:#e8f2ff;color:#075bb5;border:1px solid #bfd9fa;border-radius:9px;font-size:15px;font-weight:650;line-height:1.55;letter-spacing:.1px;user-select:text;font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:600px){#serverRows .server-ip{font-size:14px;max-width:240px}}
