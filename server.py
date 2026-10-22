@@ -39,6 +39,7 @@ def init():
         CREATE TABLE IF NOT EXISTS ip_events(id INTEGER PRIMARY KEY,server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           addresses TEXT NOT NULL,observed INTEGER NOT NULL);
         CREATE INDEX IF NOT EXISTS ip_events_server_time ON ip_events(server_id,observed);
+        CREATE INDEX IF NOT EXISTS ip_events_server_id ON ip_events(server_id,id);
         CREATE TABLE IF NOT EXISTS commands(id INTEGER PRIMARY KEY,server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           user_id INTEGER NOT NULL REFERENCES users(id),action TEXT NOT NULL,status TEXT NOT NULL,created INTEGER NOT NULL,updated INTEGER NOT NULL);
         CREATE INDEX IF NOT EXISTS commands_pending ON commands(server_id,status,created);
@@ -109,7 +110,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.0')
+    return jsonify(ok=True, version='0.2.1')
 
 @app.post('/api/login')
 def login():
@@ -299,7 +300,6 @@ def report():
             addresses=json.dumps(clean['public_ips'])
             if not last or last['addresses']!=addresses:
                 db.execute('INSERT INTO ip_events(server_id,addresses,observed) VALUES(?,?,?)',(row['id'],addresses,int(time.time())))
-            db.execute('DELETE FROM ip_events WHERE server_id=? AND id NOT IN (SELECT id FROM ip_events WHERE server_id=? ORDER BY id DESC LIMIT 1000)',(row['id'],row['id']))
         db.execute('UPDATE servers SET metrics=?,seen=? WHERE id=?',(json.dumps(clean),int(time.time()),row['id']))
         # Fetch at most one command, and mark it issued before replying (no redelivery).
         command=None;now=int(time.time())
@@ -369,13 +369,30 @@ def network_history(sid):
 @app.get('/api/servers/<int:sid>/ip-history')
 @auth()
 def ip_history(sid):
+    raw_before=request.args.get('before')
+    try:
+        before=int(raw_before) if raw_before is not None else None
+        if before is not None and before<1:raise ValueError()
+    except ValueError:return error('历史分页参数无效')
     with connect() as db:
         row=db.execute('SELECT owner_id,metrics,seen FROM servers WHERE id=?',(sid,)).fetchone()
         if not row or (g.user['role']!='admin' and row['owner_id']!=g.user['id']):return error('服务器不存在',404)
-        events=db.execute('SELECT addresses,observed FROM ip_events WHERE server_id=? ORDER BY id DESC LIMIT 1000',(sid,)).fetchall()
+        query="""SELECT e.id,e.addresses,e.observed,
+                 (SELECT previous.addresses FROM ip_events previous WHERE previous.server_id=e.server_id AND previous.id<e.id ORDER BY previous.id DESC LIMIT 1) AS previous_addresses
+                 FROM ip_events e WHERE e.server_id=?"""
+        params=[sid]
+        if before is not None:query+=' AND e.id<?';params.append(before)
+        events=db.execute(query+' ORDER BY e.id DESC LIMIT 51',params).fetchall()
+        more=len(events)>50;events=events[:50]
         metrics=json.loads(row['metrics']) if row['metrics'] else {}
-        return jsonify(events=[{'addresses':json.loads(e['addresses']),'observed':e['observed']} for e in events],
-                       available='public_ips' in metrics,error=metrics.get('ip_error',''),seen=row['seen'])
+        latest=db.execute('SELECT addresses,observed FROM ip_events WHERE server_id=? ORDER BY id DESC LIMIT 1',(sid,)).fetchone()
+        count=db.execute('SELECT COUNT(*) FROM ip_events WHERE server_id=?',(sid,)).fetchone()[0]
+        return jsonify(events=[{'id':e['id'],'addresses':json.loads(e['addresses']),'observed':e['observed'],
+                                'previous_addresses':json.loads(e['previous_addresses']) if e['previous_addresses'] is not None else None} for e in events],
+                       available='public_ips' in metrics,error=metrics.get('ip_error',''),seen=row['seen'],
+                       current_addresses=json.loads(latest['addresses']) if latest else None,
+                       latest_observed=latest['observed'] if latest else None,total=count,has_more=more,
+                       next_cursor=events[-1]['id'] if more else None)
 
 @app.get('/agent-update.sh')
 def agent_updater_download(): return send_from_directory(ROOT/'agent','update.sh',mimetype='text/plain')
@@ -414,4 +431,5 @@ if __name__=='__main__':
             uid=db.execute('SELECT id FROM users WHERE username=?',(username,)).fetchone()[0]
             db.execute('DELETE FROM sessions WHERE user_id=?',(uid,))
         print('管理员已配置')
+
 

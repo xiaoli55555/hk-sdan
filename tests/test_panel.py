@@ -159,6 +159,28 @@ class PanelTest(unittest.TestCase):
         self.admin.patch(f'/api/servers/{sid}',json={'owner_id':None},headers={'X-CSRF-Token':self.tokens['admin']})
         self.assertEqual(self.admin.post('/api/agent/commands/'+str(job['id'])+'/ack',json={},headers=h).status_code,403)
 
+    def test_complete_ip_history_pagination_and_ownership(self):
+        r=self.post('/api/servers',{'name':'cmhk-node'}).json;sid=r['id'];h={'Authorization':'Bearer '+r['token']}
+        uid=self.alice.get('/api/me').json['id']
+        self.admin.patch(f'/api/servers/{sid}',json={'owner_id':uid},headers={'X-CSRF-Token':self.tokens['admin']})
+        # More than the previous 1000-entry cap must survive a new report.
+        with server.connect() as db:
+            for i in range(1005):db.execute('INSERT INTO ip_events(server_id,addresses,observed) VALUES(?,?,?)',(sid,json.dumps(['8.8.8.8' if i%2 else '1.1.1.1']),1000+i))
+        self.admin.post('/api/agent/report',json={'uptime':10,'public_ips':['9.9.9.9']},headers=h)
+        first=self.alice.get(f'/api/servers/{sid}/ip-history').json
+        self.assertEqual(first['total'],1006);self.assertEqual(len(first['events']),50);self.assertTrue(first['has_more'])
+        self.assertEqual(first['events'][0]['addresses'],['9.9.9.9'])
+        self.assertEqual(first['events'][0]['previous_addresses'],['1.1.1.1'])
+        seen=[];cursor=None
+        while True:
+            page=self.alice.get(f'/api/servers/{sid}/ip-history'+(f'?before={cursor}' if cursor else '')).json
+            seen.extend(e['id'] for e in page['events'])
+            if not page['has_more']:break
+            cursor=page['next_cursor']
+        self.assertEqual(len(seen),1006);self.assertEqual(len(set(seen)),1006)
+        self.assertEqual(self.bob.get(f'/api/servers/{sid}/ip-history?before='+str(first['next_cursor'])).status_code,404)
+        self.assertEqual(self.alice.get(f'/api/servers/{sid}/ip-history?before=invalid').status_code,400)
+
 class NetworkDeltaTest(unittest.TestCase):
     def test_midnight_reset_and_missing(self):
         import sqlite3,datetime
@@ -188,4 +210,5 @@ class NetworkDeltaTest(unittest.TestCase):
         db.close()
 
 if __name__=='__main__':unittest.main()
+
 
