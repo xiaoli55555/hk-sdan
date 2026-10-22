@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only Debian host collector. No shell commands or remote execution."""
-import json, os, time, socket, platform, shutil, subprocess, urllib.request, urllib.error, argparse
+import json, os, time, socket, platform, shutil, subprocess, urllib.request, urllib.error, argparse, ipaddress
 from pathlib import Path
 
 def tcp_count(root=Path('/proc')):
@@ -24,6 +24,17 @@ def udp_count():
         return sum(1 for line in r.stdout.splitlines() if ' udp ' in ' '+line+' '),' '
     except (OSError,subprocess.TimeoutExpired):return None,'conntrack 采集超时或失败'
 
+def public_addresses():
+    try:
+        result=subprocess.run(['ip','-j','address','show','scope','global'],capture_output=True,text=True,timeout=5,check=True)
+        addresses=set()
+        for interface in json.loads(result.stdout):
+            for info in interface.get('addr_info',[]):
+                address=ipaddress.ip_address(info.get('local',''))
+                if address.is_global:addresses.add(str(address))
+        return sorted(addresses),''
+    except (OSError,ValueError,subprocess.SubprocessError):return None,'网卡公网 IP 采集失败'
+
 def cpu_snapshot():
     v=[int(x) for x in Path('/proc/stat').read_text().splitlines()[0].split()[1:9]]
     return sum(v),v[3]+v[4]
@@ -38,6 +49,7 @@ def collect(previous=None):
         if iface.strip()=='lo':continue
         values=fields.split();rx+=int(values[0]);tx+=int(values[8])
     udp,err=udp_count()
+    addresses,ip_error=public_addresses()
     try:tcp=tcp_count()
     except OSError:tcp=None;err+=' TCP 采集失败'
     os_name=platform.system()
@@ -48,7 +60,7 @@ def collect(previous=None):
     return {'cpu_percent':cpu,'memory_percent':round(100*(1-mem.get('MemAvailable',mem.get('MemFree',0))/mem['MemTotal']),1),
             'memory_total':mem['MemTotal'],'disk_percent':round(100*disk.used/disk.total,1),'disk_total':disk.total,
             'uptime':int(float(Path('/proc/uptime').read_text().split()[0])), 'rx_bytes':rx,'tx_bytes':tx,
-            'tcp':tcp,'udp':udp,'network_error':err.strip(),'hostname':socket.gethostname(),'os':os_name,'kernel':platform.release()},now
+            'capabilities':['reboot'],'tcp':tcp,'udp':udp,'public_ips':addresses,'ip_error':ip_error,'network_error':err.strip(),'hostname':socket.gethostname(),'os':os_name,'kernel':platform.release()},now
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--once',action='store_true');p.add_argument('--config',default='/etc/hk-sdan-agent/config.json');a=p.parse_args()
@@ -62,7 +74,22 @@ def main():
             # Never follow redirects with the agent credential.
             class NoRedirect(urllib.request.HTTPRedirectHandler):
                 def redirect_request(self,*args,**kwargs):return None
-            with urllib.request.build_opener(NoRedirect).open(req,timeout=15) as response:response.read(1024)
+            opener=urllib.request.build_opener(NoRedirect)
+            with opener.open(req,timeout=15) as response:result=json.loads(response.read(32768))
+            command=result.get('command')
+            if isinstance(command,dict) and command.get('action')=='reboot' and type(command.get('id')) is int:
+                command_url=url+'/api/agent/commands/'+str(command['id'])+'/ack'
+                headers={'Content-Type':'application/json','Authorization':'Bearer '+config['token']}
+                ack=urllib.request.Request(command_url,data=b'{}',headers=headers,method='POST')
+                # Only act after the server accepts this one-time acknowledgement.
+                with opener.open(ack,timeout=15) as response:response.read(1024)
+                try:
+                    subprocess.run(['/usr/bin/systemctl','reboot','--no-block'],check=True,timeout=15,capture_output=True)
+                    print('重启请求已交给系统管理器',flush=True)
+                except (OSError,subprocess.SubprocessError):
+                    print('系统重启请求失败',flush=True)
+                    failure=urllib.request.Request(command_url,data=b'{"status":"failed"}',headers=headers,method='POST')
+                    with opener.open(failure,timeout=15) as response:response.read(1024)
             print('上报成功',flush=True)
         except Exception as e:
             # Avoid including URL, request headers or token in logs.

@@ -8,7 +8,7 @@ read -rp '面板 HTTPS 地址（例如 https://panel.example.com）: ' PANEL_URL
 read -rsp '服务器专属接入密钥: ' AGENT_TOKEN; echo
 [[ ${#AGENT_TOKEN} -ge 40 ]] || { echo '密钥不正确'; exit 1; }
 apt-get update
-apt-get install -y python3 curl ca-certificates conntrack
+apt-get install -y python3 curl ca-certificates conntrack iproute2
 umask 077
 mkdir -p /opt/hk-sdan-agent /etc/hk-sdan-agent
 TMP_AGENT=$(mktemp); trap 'rm -f "$TMP_AGENT"' EXIT
@@ -25,7 +25,7 @@ PY
 unset AGENT_TOKEN
 cat > /etc/systemd/system/hk-sdan-agent.service <<'EOF'
 [Unit]
-Description=HK SDAN read-only monitoring agent
+Description=HK SDAN monitoring and reboot agent
 After=network-online.target
 Wants=network-online.target
 [Service]
@@ -41,7 +41,7 @@ ProtectControlGroups=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_NETLINK AF_UNIX
-CapabilityBoundingSet=CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_BOOT
 UMask=0077
 [Install]
 WantedBy=multi-user.target
