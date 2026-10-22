@@ -1,0 +1,41 @@
+name: hk-sdan
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATA_DIR: /data
+      COOKIE_SECURE: '1'
+    volumes:
+      - panel-data:/data
+    ports:
+      - '127.0.0.1:8080:8080'
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      PANEL_DOMAIN: ${PANEL_DOMAIN:?Run bash scripts/install.sh first}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+volumes:
+  panel-data:
+    name: hk-sdan-data
+  caddy-data:
+    name: hk-sdan-caddy-data
+  caddy-config:
+    name: hk-sdan-caddy-config
