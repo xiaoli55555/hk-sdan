@@ -199,6 +199,29 @@ class PanelTest(unittest.TestCase):
         self.assertFalse(offline['online']);self.assertEqual(offline['current'],{})
         self.assertTrue(offline['points'])
 
+    def test_one_command_enrollment_is_single_use_and_preserves_server(self):
+        r=self.post('/api/servers',{'name':'quick-install'}).json;sid=r['id'];ticket=r['ticket']
+        self.assertEqual(self.alice.post(f'/api/servers/{sid}/install-ticket',json={},headers={'X-CSRF-Token':self.tokens['alice']}).status_code,403)
+        self.assertEqual(self.admin.post('/api/agent/enroll',json={'ticket':'bad'}).status_code,401)
+        result=self.admin.post('/api/agent/enroll',json={'ticket':ticket})
+        self.assertEqual(result.status_code,200);token=result.json['token']
+        self.assertNotEqual(token,r['token'])
+        self.assertEqual(self.admin.post('/api/agent/enroll',json={'ticket':ticket}).status_code,401)
+        self.assertEqual(self.admin.post('/api/agent/report',json={'tcp':1},headers={'Authorization':'Bearer '+r['token']}).status_code,401)
+        self.assertEqual(self.admin.post('/api/agent/report',json={'tcp':1},headers={'Authorization':'Bearer '+token}).status_code,200)
+        rows=self.admin.get('/api/servers').json
+        self.assertEqual(len(rows),1);self.assertEqual(rows[0]['id'],sid)
+        pending=self.post(f'/api/servers/{sid}/install-ticket').json['ticket']
+        # Generating a command does not interrupt the installed client.
+        self.assertEqual(self.admin.post('/api/agent/report',json={'tcp':1},headers={'Authorization':'Bearer '+token}).status_code,200)
+        with server.connect() as db:db.execute('UPDATE install_tickets SET expires=? WHERE hash=?',(int(time.time())-1,server.digest(pending)))
+        self.assertEqual(self.admin.post('/api/agent/enroll',json={'ticket':pending}).status_code,401)
+    def test_regenerating_install_command_revokes_previous_ticket(self):
+        r=self.post('/api/servers',{'name':'ticket-node'}).json;sid=r['id']
+        newer=self.post(f'/api/servers/{sid}/install-ticket').json['ticket']
+        self.assertEqual(self.admin.post('/api/agent/enroll',json={'ticket':r['ticket']}).status_code,401)
+        self.assertEqual(self.admin.post('/api/agent/enroll',json={'ticket':newer}).status_code,200)
+
 class NetworkDeltaTest(unittest.TestCase):
     def test_midnight_reset_and_missing(self):
         import sqlite3,datetime

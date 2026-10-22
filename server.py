@@ -47,7 +47,9 @@ def init():
         INSERT OR IGNORE INTO settings(key,value) VALUES('admin_path','/admin');
         CREATE TABLE IF NOT EXISTS metric_points(server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           stamp INTEGER NOT NULL,cpu REAL,memory REAL,tcp REAL,udp REAL,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));
-        PRAGMA user_version=6;
+        CREATE TABLE IF NOT EXISTS install_tickets(hash TEXT PRIMARY KEY,server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+          expires INTEGER NOT NULL,used INTEGER NOT NULL DEFAULT 0);
+        PRAGMA user_version=7;
         ''')
 
         if 'entry' not in [r[1] for r in db.execute('PRAGMA table_info(sessions)')]:
@@ -64,6 +66,12 @@ def entry_context():
 
 def digest(s): return hashlib.sha256(s.encode()).hexdigest()
 def error(msg, status=400): return jsonify(error=msg), status
+
+def issue_install_ticket(db,sid):
+    ticket=secrets.token_urlsafe(40);now=int(time.time())
+    db.execute('DELETE FROM install_tickets WHERE server_id=? OR expires<?',(sid,now))
+    db.execute('INSERT INTO install_tickets(hash,server_id,expires) VALUES(?,?,?)',(digest(ticket),sid,now+600))
+    return ticket
 
 def audit(db, action):
     db.execute('INSERT INTO audit(user_id,action,created) VALUES(?,?,?)', (g.user['id'], action, int(time.time())))
@@ -112,7 +120,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.2')
+    return jsonify(ok=True, version='0.2.3')
 
 @app.post('/api/login')
 def login():
@@ -222,7 +230,8 @@ def add_server():
     with connect() as db:
         c=db.execute('INSERT INTO servers(name,agent_hash,created) VALUES(?,?,?)',(name.strip(),digest(token),int(time.time())))
         audit(db,'添加服务器 '+name)
-    return jsonify(id=c.lastrowid,token=token),201
+        ticket=issue_install_ticket(db,c.lastrowid)
+    return jsonify(id=c.lastrowid,token=token,ticket=ticket),201
 
 @app.patch('/api/servers/<int:sid>')
 @auth(True)
@@ -242,7 +251,16 @@ def rotate(sid):
     with connect() as db:
         if not db.execute('UPDATE servers SET agent_hash=? WHERE id=?',(digest(token),sid)).rowcount:return error('服务器不存在',404)
         audit(db,f'重置服务器 #{sid} 采集密钥')
-    return jsonify(token=token)
+        ticket=issue_install_ticket(db,sid)
+    return jsonify(token=token,ticket=ticket)
+
+@app.post('/api/servers/<int:sid>/install-ticket')
+@auth(True)
+def create_install_ticket(sid):
+    with connect() as db:
+        if not db.execute('SELECT id FROM servers WHERE id=?',(sid,)).fetchone():return error('服务器不存在',404)
+        ticket=issue_install_ticket(db,sid);audit(db,f'生成服务器 #{sid} 一次性接入命令')
+    return jsonify(ticket=ticket)
 
 @app.delete('/api/servers/<int:sid>')
 @auth(True)
@@ -255,6 +273,20 @@ def delete(sid):
 @auth(True)
 def logs():
     with connect() as db:return jsonify([dict(r) for r in db.execute('SELECT audit.*,users.username FROM audit LEFT JOIN users ON users.id=audit.user_id ORDER BY audit.id DESC LIMIT 200')])
+
+@app.post('/api/agent/enroll')
+def agent_enroll():
+    ticket=body().get('ticket','')
+    if not isinstance(ticket,str) or not re.fullmatch(r'[A-Za-z0-9_-]{40,128}',ticket):return error('接入凭证无效',401)
+    now=int(time.time())
+    with connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        row=db.execute('SELECT * FROM install_tickets WHERE hash=?',(digest(ticket),)).fetchone()
+        if not row or row['used'] or row['expires']<now:return error('接入凭证已失效或已使用，请重新生成',401)
+        token=secrets.token_urlsafe(40)
+        db.execute('UPDATE install_tickets SET used=1 WHERE hash=?',(digest(ticket),))
+        db.execute('UPDATE servers SET agent_hash=? WHERE id=?',(digest(token),row['server_id']))
+    return jsonify(token=token)
 
 @app.post('/api/agent/report')
 def report():
