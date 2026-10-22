@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only Debian host collector. No shell commands or remote execution."""
-import json, os, time, socket, platform, shutil, subprocess, urllib.request, urllib.error, argparse, ipaddress
+import json, os, time, socket, platform, shutil, subprocess, urllib.request, urllib.error, argparse, ipaddress, threading
 from pathlib import Path
 
 def tcp_count(root=Path('/proc')):
@@ -39,7 +39,40 @@ def cpu_snapshot():
     v=[int(x) for x in Path('/proc/stat').read_text().splitlines()[0].split()[1:9]]
     return sum(v),v[3]+v[4]
 
-def collect(previous=None):
+class ConnectionSampler:
+    def __init__(self):self.next_at=0;self.values=(None,None,'尚未采集连接数');self.sampled_at=None
+    def sample(self,clock=time.monotonic):
+        now=clock()
+        if now>=self.next_at:
+            udp,err=udp_count()
+            try:tcp=tcp_count()
+            except OSError:tcp=None;err+=' TCP 采集失败'
+            self.values=(tcp,udp,err.strip());self.sampled_at=int(time.time());self.next_at=now+15
+        return self.values
+
+class EgressSampler:
+    # Slow or unavailable IP services never block the resource reporting loop.
+    def __init__(self):self.lock=threading.Lock();self.state={}
+    def snapshot(self):
+        with self.lock:return dict(self.state)
+    def run(self):
+        while True:
+            started=time.monotonic();addresses=[];failed=False
+            for endpoint in ('https://api.ipify.org','https://api6.ipify.org'):
+                try:
+                    opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect)
+                    with opener.open(endpoint,timeout=3) as response:
+                        address=ipaddress.ip_address(response.read(128).decode().strip())
+                    if not address.is_global:raise ValueError('non-public address')
+                    addresses.append(str(address))
+                except Exception:failed=True
+            with self.lock:self.state={'egress_ips':sorted(set(addresses)) if addresses else None,'egress_checked':int(time.time()),'egress_error':'部分出口地址未检测到（无 IPv6 或检测服务不可用）' if failed else ''}
+            time.sleep(max(0,60-(time.monotonic()-started)))
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self,*args,**kwargs):return None
+
+def collect(previous=None,connections=None):
     now=cpu_snapshot();cpu=None
     if previous and now[0]>previous[0]:cpu=round(100*(1-(now[1]-previous[1])/(now[0]-previous[0])),1)
     mem={line.split(':')[0]:int(line.split()[1])*1024 for line in Path('/proc/meminfo').read_text().splitlines() if len(line.split())>=2}
@@ -48,10 +81,8 @@ def collect(previous=None):
         iface,fields=line.split(':',1)
         if iface.strip()=='lo':continue
         values=fields.split();rx+=int(values[0]);tx+=int(values[8])
-    udp,err=udp_count()
+    tcp,udp,err=(connections or ConnectionSampler()).sample()
     addresses,ip_error=public_addresses()
-    try:tcp=tcp_count()
-    except OSError:tcp=None;err+=' TCP 采集失败'
     os_name=platform.system()
     try:
         for line in Path('/etc/os-release').read_text().splitlines():
@@ -60,20 +91,21 @@ def collect(previous=None):
     return {'cpu_percent':cpu,'memory_percent':round(100*(1-mem.get('MemAvailable',mem.get('MemFree',0))/mem['MemTotal']),1),
             'memory_total':mem['MemTotal'],'disk_percent':round(100*disk.used/disk.total,1),'disk_total':disk.total,
             'uptime':int(float(Path('/proc/uptime').read_text().split()[0])), 'rx_bytes':rx,'tx_bytes':tx,
-            'capabilities':['reboot'],'tcp':tcp,'udp':udp,'public_ips':addresses,'ip_error':ip_error,'network_error':err.strip(),'hostname':socket.gethostname(),'os':os_name,'kernel':platform.release()},now
+            'connections_sampled':connections.sampled_at if connections else int(time.time()),'capabilities':['reboot'],'tcp':tcp,'udp':udp,'public_ips':addresses,'ip_error':ip_error,'network_error':err.strip(),'hostname':socket.gethostname(),'os':os_name,'kernel':platform.release()},now
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--once',action='store_true');p.add_argument('--config',default='/etc/hk-sdan-agent/config.json');a=p.parse_args()
     config=json.loads(Path(a.config).read_text());url=config['url'].rstrip('/')
     if not url.startswith('https://'):raise SystemExit('只支持 HTTPS 面板地址')
-    previous=None
+    previous=None;connections=ConnectionSampler();egress=EgressSampler()
+    threading.Thread(target=egress.run,daemon=True).start()
     while True:
+        started=time.monotonic()
         try:
-            metrics,previous=collect(previous)
+            metrics,previous=collect(previous,connections)
+            metrics.update(egress.snapshot())
             req=urllib.request.Request(url+'/api/agent/report',data=json.dumps(metrics).encode(),headers={'Content-Type':'application/json','Authorization':'Bearer '+config['token']},method='POST')
             # Never follow redirects with the agent credential.
-            class NoRedirect(urllib.request.HTTPRedirectHandler):
-                def redirect_request(self,*args,**kwargs):return None
             opener=urllib.request.build_opener(NoRedirect)
             with opener.open(req,timeout=15) as response:result=json.loads(response.read(32768))
             command=result.get('command')
@@ -90,10 +122,10 @@ def main():
                     print('系统重启请求失败',flush=True)
                     failure=urllib.request.Request(command_url,data=b'{"status":"failed"}',headers=headers,method='POST')
                     with opener.open(failure,timeout=15) as response:response.read(1024)
-            print('上报成功',flush=True)
+            # Routine five-second reports stay out of journald to reduce disk writes.
         except Exception as e:
             # Avoid including URL, request headers or token in logs.
             print('采集或上报失败：'+type(e).__name__,flush=True)
         if a.once:break
-        time.sleep(15)
+        time.sleep(max(0,5-(time.monotonic()-started)))
 if __name__=='__main__':main()

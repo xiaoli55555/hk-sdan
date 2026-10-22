@@ -36,11 +36,15 @@ def record_network(db,row,metrics,now):
             db.execute('INSERT INTO traffic_daily(server_id,day,rx,tx) VALUES(?,?,?,?) ON CONFLICT(server_id,day) DO UPDATE SET rx=rx+excluded.rx,tx=tx+excluded.tx',
                        (row['id'],day_key(start),part_rx,part_tx))
             allocated_rx+=part_rx;allocated_tx+=part_tx;start=stop
-    db.execute('INSERT OR REPLACE INTO network_points(server_id,stamp,rx_bps,tx_bps) VALUES(?,?,?,?)',(row['id'],now,metrics['rx_bps'],metrics['tx_bps']))
-    db.execute('INSERT OR REPLACE INTO metric_points(server_id,stamp,cpu,memory,tcp,udp,rx_bps,tx_bps) VALUES(?,?,?,?,?,?,?,?)',
-               (row['id'],now,metrics.get('cpu_percent'),metrics.get('memory_percent'),metrics.get('tcp'),metrics.get('udp'),metrics['rx_bps'],metrics['tx_bps']))
-    db.execute('DELETE FROM metric_points WHERE server_id=? AND stamp<?',(row['id'],now-7*86400))
-    # Only prune the reporting node; bounded indexed deletes instead of full scans.
-    db.execute('DELETE FROM network_points WHERE server_id=? AND stamp<?',(row['id'],now-7*86400))
-    db.execute('DELETE FROM traffic_daily WHERE server_id=? AND day<?',(row['id'],day_key(now-400*86400)))
+    # Keep current counters and traffic fresh on every report, but sample history
+    # at most once per 15 seconds. Indexed lookup; old agents remain compatible.
+    last=db.execute('SELECT stamp FROM metric_points WHERE server_id=? ORDER BY stamp DESC LIMIT 1',(row['id'],)).fetchone()
+    if last is None or now-last[0]>=15:
+        db.execute('INSERT OR REPLACE INTO network_points(server_id,stamp,rx_bps,tx_bps) VALUES(?,?,?,?)',(row['id'],now,metrics['rx_bps'],metrics['tx_bps']))
+        db.execute('INSERT OR REPLACE INTO metric_points(server_id,stamp,cpu,memory,tcp,udp,rx_bps,tx_bps) VALUES(?,?,?,?,?,?,?,?)',
+                   (row['id'],now,metrics.get('cpu_percent'),metrics.get('memory_percent'),metrics.get('tcp'),metrics.get('udp'),metrics['rx_bps'],metrics['tx_bps']))
+        db.execute('DELETE FROM metric_points WHERE server_id=? AND stamp<?',(row['id'],now-7*86400))
+        # Only prune the reporting node; bounded indexed deletes instead of full scans.
+        db.execute('DELETE FROM network_points WHERE server_id=? AND stamp<?',(row['id'],now-7*86400))
+        db.execute('DELETE FROM traffic_daily WHERE server_id=? AND day<?',(row['id'],day_key(now-400*86400)))
     return metrics

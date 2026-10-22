@@ -123,7 +123,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.5')
+    return jsonify(ok=True, version='0.2.6')
 
 @app.post('/api/login')
 def login():
@@ -341,7 +341,7 @@ def report():
             if type(v) not in (int,float) or not math.isfinite(v) or not 0<=v<=maximum:return error('指标格式无效：'+k)
             if k in ('tcp','udp') and type(v) is not int:return error('连接数必须是整数')
             clean[k]=v
-        for k in ('hostname','os','kernel','network_error','ip_error'):
+        for k in ('hostname','os','kernel','network_error','ip_error','egress_error'):
             v=d.get(k,'')
             if not isinstance(v,str) or len(v)>256:return error('指标格式无效：'+k)
             clean[k]=v
@@ -353,6 +353,21 @@ def report():
                 if len(normalized)!=len(ips) or any(not ip.is_global for ip in normalized):return error('只能上报公网 IP 地址')
                 clean['public_ips']=sorted(set(str(ip) for ip in normalized))
             except ValueError:return error('IP 地址格式无效')
+        if 'egress_ips' in d:
+            ips=d['egress_ips']
+            if ips is not None:
+                if not isinstance(ips,list) or len(ips)>2:return error('出口 IP 格式无效')
+                try:
+                    addresses=[ipaddress.ip_address(ip) for ip in ips if isinstance(ip,str)]
+                    if len(addresses)!=len(ips) or any(not ip.is_global for ip in addresses):return error('出口 IP 格式无效')
+                    clean['egress_ips']=sorted(set(str(ip) for ip in addresses))
+                except ValueError:return error('出口 IP 格式无效')
+            else:clean['egress_ips']=None
+        for stamp_key in ('egress_checked','connections_sampled'):
+            stamp=d.get(stamp_key)
+            if stamp is not None:
+                if type(stamp) is not int or not 0<=stamp<=int(time.time())+60:return error('采集时间格式无效')
+                clean[stamp_key]=stamp
         clean['capabilities']=['reboot'] if isinstance(d.get('capabilities'),list) and 'reboot' in d['capabilities'] else []
         clean['network_method']='TCP ESTABLISHED sockets; UDP conntrack original tuples (unreplied included)'
         db.execute('BEGIN IMMEDIATE')
