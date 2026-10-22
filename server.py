@@ -123,7 +123,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.4')
+    return jsonify(ok=True, version='0.2.5')
 
 @app.post('/api/login')
 def login():
