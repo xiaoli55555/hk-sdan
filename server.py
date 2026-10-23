@@ -123,7 +123,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.7')
+    return jsonify(ok=True, version='0.2.8')
 
 @app.post('/api/login')
 def login():
@@ -334,12 +334,12 @@ def report():
         if throttled('agent:'+str(row['id']),30,60):return error('上报过于频繁',429)
         d=body(); clean={}
         numeric={'cpu_percent':100,'memory_percent':100,'disk_percent':100,'memory_total':2**60,'disk_total':2**60,
-                 'uptime':2**53,'rx_bytes':2**63,'tx_bytes':2**63,'tcp':2**53,'udp':2**53}
+                 'uptime':2**53,'cpu_count':4096,'memory_used':2**60,'rx_bytes':2**63,'tx_bytes':2**63,'tcp':2**53,'udp':2**53}
         for k,maximum in numeric.items():
             v=d.get(k)
             if v is None:clean[k]=None;continue
             if type(v) not in (int,float) or not math.isfinite(v) or not 0<=v<=maximum:return error('指标格式无效：'+k)
-            if k in ('tcp','udp') and type(v) is not int:return error('连接数必须是整数')
+            if k in ('tcp','udp','cpu_count') and type(v) is not int:return error('连接数必须是整数')
             clean[k]=v
         for k in ('hostname','os','kernel','network_error','ip_error','egress_error'):
             v=d.get(k,'')

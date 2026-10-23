@@ -47,3 +47,23 @@ class UDPSocketTest(unittest.TestCase):
         with patch.object(collector.shutil,'which',return_value=None):self.assertIsNone(collector.udp_count()[0])
         with patch.object(collector.shutil,'which',return_value='/usr/bin/ss'),patch.object(collector.subprocess,'run',side_effect=collector.subprocess.TimeoutExpired('ss',5)):
             self.assertIsNone(collector.udp_count()[0])
+
+class HardwareInventoryTest(unittest.TestCase):
+    def test_cpu_count_uses_process_available_logical_cpus(self):
+        with patch.object(collector.os,'sched_getaffinity',return_value={0,2,4,6}):self.assertEqual(collector.logical_cpu_count(),4)
+        with patch.object(collector.os,'sched_getaffinity',side_effect=OSError),patch.object(collector.os,'cpu_count',return_value=8):self.assertEqual(collector.logical_cpu_count(),8)
+    def test_report_includes_memory_capacity_used_and_cpu_count(self):
+        from unittest.mock import patch, mock_open
+        stat='cpu  1 2 3 4 5 6 7 8\n'
+        mem='MemTotal: 4194304 kB\nMemAvailable: 3145728 kB\nMemFree: 1000 kB\n'
+        def read(path,*args,**kwargs):
+            if str(path)=='/proc/stat':return stat
+            if str(path)=='/proc/meminfo':return mem
+            if str(path)=='/proc/uptime':return '100.0 200.0'
+            if str(path)=='/etc/os-release':raise OSError()
+            if str(path)=='/proc/net/dev':return 'Inter-| Receive | Transmit\n eth0: 10 0 0 0 0 0 0 0 20 0 0 0 0 0 0 0\n'
+            raise AssertionError(path)
+        with patch.object(collector.Path,'read_text',new=read),patch.object(collector.shutil,'disk_usage',return_value=__import__('shutil')._ntuple_diskusage(50,100,100)),patch.object(collector,'logical_cpu_count',return_value=4),patch.object(collector,'ConnectionSampler') as conn,patch.object(collector,'public_addresses',return_value=([],'')):
+            conn.return_value.sample.return_value=(1,0,'')
+            metrics,_=collector.collect(None,conn.return_value)
+        self.assertEqual((metrics['cpu_count'],metrics['memory_total'],metrics['memory_used']),(4,4294967296,1073741824))

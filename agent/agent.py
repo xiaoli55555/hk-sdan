@@ -34,6 +34,10 @@ def public_addresses():
         return sorted(addresses),''
     except (OSError,ValueError,subprocess.SubprocessError):return None,'网卡公网 IP 采集失败'
 
+def logical_cpu_count():
+    try:return len(os.sched_getaffinity(0))
+    except (AttributeError,OSError):return os.cpu_count()
+
 def cpu_snapshot():
     v=[int(x) for x in Path('/proc/stat').read_text().splitlines()[0].split()[1:9]]
     return sum(v),v[3]+v[4]
@@ -88,7 +92,7 @@ def collect(previous=None,connections=None):
             if line.startswith('PRETTY_NAME='):os_name=line.split('=',1)[1].strip('"')
     except OSError:pass
     return {'cpu_percent':cpu,'memory_percent':round(100*(1-mem.get('MemAvailable',mem.get('MemFree',0))/mem['MemTotal']),1),
-            'memory_total':mem['MemTotal'],'disk_percent':round(100*disk.used/disk.total,1),'disk_total':disk.total,
+            'memory_total':mem['MemTotal'],'memory_used':max(0,mem['MemTotal']-mem.get('MemAvailable',mem.get('MemFree',0))),'cpu_count':logical_cpu_count(),'disk_percent':round(100*disk.used/disk.total,1),'disk_total':disk.total,
             'uptime':int(float(Path('/proc/uptime').read_text().split()[0])), 'rx_bytes':rx,'tx_bytes':tx,
             'udp_method':'socket','connections_sampled':connections.sampled_at if connections else int(time.time()),'capabilities':['reboot'],'tcp':tcp,'udp':udp,'public_ips':addresses,'ip_error':ip_error,'network_error':err.strip(),'hostname':socket.gethostname(),'os':os_name,'kernel':platform.release()},now
 
