@@ -26,7 +26,19 @@ function setHyperspaceActive(active){
  hyperspaceFrame=requestAnimationFrame(frame);
 }
 function applyTheme(theme,persist=false){const fire=theme==='fire',eve=theme==='eve',standard=!fire&&!eve;document.body.classList.toggle('fire-theme',fire);document.body.classList.toggle('eve-theme',eve);$('themeStandard').classList.toggle('active',standard);$('themeFire').classList.toggle('active',fire);$('themeEve').classList.toggle('active',eve);$('themeStandard').setAttribute('aria-pressed',String(standard));$('themeFire').setAttribute('aria-pressed',String(fire));$('themeEve').setAttribute('aria-pressed',String(eve));if(persist){try{localStorage.setItem(THEME_KEY,theme)}catch(e){}}setHyperspaceActive(eve&&!$('shell').hidden&&page==='servers');}
-function chooseTheme(theme){applyTheme(theme,true);try{if(sessionStorage.getItem(FIRE_CYCLE_KEY)==='1')sessionStorage.setItem(FIRE_MANUAL_KEY,'1')}catch(e){}}
+function playHatchSound(){
+ try{
+  const AudioContextType=window.AudioContext||window.webkitAudioContext;if(!AudioContextType)return;
+  const audio=new AudioContextType(),start=audio.currentTime,master=audio.createGain();master.gain.setValueAtTime(.16,start);master.connect(audio.destination);
+  if(audio.state==='suspended')audio.resume().catch(()=>{});
+  const size=Math.floor(audio.sampleRate*.95),buffer=audio.createBuffer(1,size,audio.sampleRate),samples=buffer.getChannelData(0);for(let i=0;i<size;i++)samples[i]=(Math.random()*2-1)*(1-i/size*.78);
+  const air=audio.createBufferSource(),filter=audio.createBiquadFilter(),airGain=audio.createGain();air.buffer=buffer;filter.type='lowpass';filter.frequency.setValueAtTime(2100,start);filter.frequency.exponentialRampToValueAtTime(380,start+.86);airGain.gain.setValueAtTime(.0001,start);airGain.gain.linearRampToValueAtTime(.48,start+.12);airGain.gain.exponentialRampToValueAtTime(.0001,start+.94);air.connect(filter);filter.connect(airGain);airGain.connect(master);air.start(start);air.stop(start+.96);
+  const motor=audio.createOscillator(),motorFilter=audio.createBiquadFilter(),motorGain=audio.createGain();motor.type='sawtooth';motor.frequency.setValueAtTime(118,start);motor.frequency.exponentialRampToValueAtTime(48,start+.58);motorFilter.type='lowpass';motorFilter.frequency.value=380;motorGain.gain.setValueAtTime(.0001,start);motorGain.gain.linearRampToValueAtTime(.12,start+.08);motorGain.gain.exponentialRampToValueAtTime(.0001,start+.7);motor.connect(motorFilter);motorFilter.connect(motorGain);motorGain.connect(master);motor.start(start);motor.stop(start+.72);
+  const latch=audio.createOscillator(),latchGain=audio.createGain();latch.type='triangle';latch.frequency.setValueAtTime(92,start+.63);latch.frequency.exponentialRampToValueAtTime(38,start+.84);latchGain.gain.setValueAtTime(.0001,start+.63);latchGain.gain.linearRampToValueAtTime(.3,start+.65);latchGain.gain.exponentialRampToValueAtTime(.0001,start+.87);latch.connect(latchGain);latchGain.connect(master);latch.start(start+.63);latch.stop(start+.89);
+  setTimeout(()=>audio.close().catch(()=>{}),1300);
+ }catch(e){}
+}
+function chooseTheme(theme){const wasTacticalAmber=document.body.classList.contains('eve-theme');applyTheme(theme,true);if(theme==='eve'&&!wasTacticalAmber)playHatchSound();try{if(sessionStorage.getItem(FIRE_CYCLE_KEY)==='1')sessionStorage.setItem(FIRE_MANUAL_KEY,'1')}catch(e){}}
 function fireThresholdExceeded(rows){return rows.some(s=>s.online&&Number.isFinite(Number(s.metrics?.cpu_percent))&&Number(s.metrics.cpu_percent)>50)}
 applyTheme(readPreferredTheme());
 $('themeStandard').onclick=()=>chooseTheme('standard');$('themeFire').onclick=()=>chooseTheme('fire');$('themeEve').onclick=()=>chooseTheme('eve');
