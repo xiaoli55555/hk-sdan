@@ -5,12 +5,12 @@ let me=null,servers=[],customers=[],page='servers',timer=null,announcementTimer=
 let networkTimer=null,networkServer=null,networkRange='1h',ipHistoryView=0,metricState=null;
 let previousMetrics=new Map();
 const THEME_KEY='hksdan-theme-preference',FIRE_CYCLE_KEY='hksdan-fire-cycle-active',FIRE_MANUAL_KEY='hksdan-fire-manual-override';
-function readPreferredTheme(){try{return localStorage.getItem(THEME_KEY)==='fire'?'fire':'standard'}catch(e){return 'standard'}}
-function applyTheme(theme,persist=false){const fire=theme==='fire';document.body.classList.toggle('fire-theme',fire);$('themeStandard').classList.toggle('active',!fire);$('themeFire').classList.toggle('active',fire);$('themeStandard').setAttribute('aria-pressed',String(!fire));$('themeFire').setAttribute('aria-pressed',String(fire));if(persist){try{localStorage.setItem(THEME_KEY,fire?'fire':'standard')}catch(e){}}}
+function readPreferredTheme(){try{const saved=localStorage.getItem(THEME_KEY);return saved==='fire'||saved==='eve'?saved:'standard'}catch(e){return 'standard'}}
+function applyTheme(theme,persist=false){const fire=theme==='fire',eve=theme==='eve',standard=!fire&&!eve;document.body.classList.toggle('fire-theme',fire);document.body.classList.toggle('eve-theme',eve);$('themeStandard').classList.toggle('active',standard);$('themeFire').classList.toggle('active',fire);$('themeEve').classList.toggle('active',eve);$('themeStandard').setAttribute('aria-pressed',String(standard));$('themeFire').setAttribute('aria-pressed',String(fire));$('themeEve').setAttribute('aria-pressed',String(eve));if(persist){try{localStorage.setItem(THEME_KEY,theme)}catch(e){}}}
 function chooseTheme(theme){applyTheme(theme,true);try{if(sessionStorage.getItem(FIRE_CYCLE_KEY)==='1')sessionStorage.setItem(FIRE_MANUAL_KEY,'1')}catch(e){}}
 function fireThresholdExceeded(rows){return rows.some(s=>s.online&&Number.isFinite(Number(s.metrics?.cpu_percent))&&Number(s.metrics.cpu_percent)>50)}
 applyTheme(readPreferredTheme());
-$('themeStandard').onclick=()=>chooseTheme('standard');$('themeFire').onclick=()=>chooseTheme('fire');
+$('themeStandard').onclick=()=>chooseTheme('standard');$('themeFire').onclick=()=>chooseTheme('fire');$('themeEve').onclick=()=>chooseTheme('eve');
 async function api(path,method='GET',data){const r=await fetch('/api/'+path,{method,headers:{'Content-Type':'application/json','X-Panel-Entry':panelEntry,'X-CSRF-Token':me?.csrf||''},body:data===undefined?undefined:JSON.stringify(data)});const result=await r.json();if(!r.ok){if(r.status===401&&me)signout();throw Error(result.error||'请求失败')}return result}
 function notice(s){$('message').textContent=s}
 function signout(){stopNetworkMonitor();$('userForm').reset();$('customerPassword').type='password';me=null;selectedServer=null;selectedMessageUser=null;clearInterval(timer);clearInterval(announcementTimer);clearInterval(renewalTimer);clearInterval(renewalSyncTimer);clearInterval(messageTimer);clearInterval(messageBadgeTimer);$('modal').close();$('shell').hidden=true;$('login').hidden=false}
