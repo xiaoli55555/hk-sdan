@@ -389,3 +389,29 @@ body.fire-theme .danger{background:#ffd4ca!important;color:#7a1d11!important}
 /* Keep the message contact list inside its split pane; the global sidebar rule must not pin it over the main navigation. */
 aside.wechat-contacts{position:relative;inset:auto;width:auto;padding:0;backdrop-filter:none;border-right:1px solid #e8eaed}
 @media(max-width:760px){aside.wechat-contacts{position:relative;width:auto;padding:0}}
+
+/* High-performance forwarding request and admin request list. */
+.forwarding-client-view{max-width:760px;margin:24px auto}
+.forwarding-card{position:relative;overflow:hidden;padding:34px; border-color:#d5deea; background:linear-gradient(145deg,#fff,#f7faff 64%,#eaf3ff);box-shadow:0 16px 42px #294d7b12}
+.forwarding-mark{display:grid;place-items:center;width:56px;height:56px;margin-bottom:20px;border-radius:17px;background:#dbeafe;color:#075bc3;font-size:28px;font-weight:750}
+.forwarding-card h2,.forwarding-admin-intro h2{margin:7px 0 10px;color:#152033;font-size:21px}
+.forwarding-card>p,.forwarding-admin-intro p{color:#46566e;font-size:13px}
+.forwarding-request-state{margin:22px 0 12px;padding:13px 15px;border:1px solid #cbd8e8;border-radius:12px;background:#f1f5fa;color:#34445b;font-size:12px;line-height:1.7}
+.forwarding-request-state.submitted{border-color:#9fcab0;background:#e5f4e9;color:#1e5732}
+#forwardingRequestForm{margin:0}
+#submitForwardingRequest{border-radius:11px;font-weight:700}
+.forwarding-note{display:block;margin-top:14px;color:#5c6b80;font-size:10px}
+.forwarding-admin-intro{margin-bottom:18px}
+.forwarding-admin-intro h2{margin-bottom:6px}
+.forwarding-admin-intro p{margin:0}
+#forwardingRequestRows td{color:#28394f}
+.forwarding-no-requests{text-align:center;color:#586a80!important}
+body.fire-theme .forwarding-card{border-color:#d99b77;background:linear-gradient(145deg,#fffaf5,#fff0e3 64%,#ffdfc7);box-shadow:0 16px 42px #87361922}
+body.fire-theme .forwarding-mark{background:#f7d7be;color:#8c2a0d}
+body.fire-theme .forwarding-card h2,body.fire-theme .forwarding-admin-intro h2{color:#35190f}
+body.fire-theme .forwarding-card>p,body.fire-theme .forwarding-admin-intro p{color:#563627}
+body.fire-theme .forwarding-request-state{border-color:#d8ad91;background:#f8e6d6;color:#482919}
+body.fire-theme .forwarding-request-state.submitted{border-color:#a8c9ac;background:#e2f0df;color:#194a2a}
+body.fire-theme .forwarding-note{color:#684936}
+body.fire-theme #forwardingRequestRows td,body.fire-theme .forwarding-no-requests{color:#482919!important}
+@media(max-width:600px){.forwarding-client-view{margin:16px 0}.forwarding-card{padding:22px 18px}.forwarding-mark{width:48px;height:48px;border-radius:14px;font-size:24px}}
