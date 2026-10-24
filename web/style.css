@@ -63,3 +63,36 @@ aside{width:144px;padding:25px 10px}main{margin-left:144px}aside .logo{font-size
 #serverRows .connection-secondary span{font-size:9px;color:#a1aab7}
 @media(max-width:1250px){#serverRows .metric-gauge{max-width:190px}#serverRows .network-meter{max-width:175px;gap:7px}}
 @media(prefers-reduced-motion:reduce){#serverRows .mini-gauge-ring,#serverRows .network-rate em{transition:none}}
+
+/* Theme switch and an optional fire alert skin. */
+.header-tools{display:flex;align-items:center;gap:14px}
+.theme-switch{display:inline-flex;align-items:center;gap:3px;padding:3px;border:1px solid #e7e9ee;border-radius:999px;background:#ffffffb8;box-shadow:0 3px 14px #212d3c0a}
+.theme-switch button{padding:7px 12px;border-radius:999px;background:transparent;color:#697386;font-size:12px;white-space:nowrap}
+.theme-switch button.active{background:#f0f2f6;color:#303946;box-shadow:0 1px 3px #20293816}
+.theme-switch #themeFire.active{background:linear-gradient(135deg,#ff7138,#e83f25);color:white;box-shadow:0 4px 14px #f26b3c40}
+body.fire-theme{background:radial-gradient(ellipse at 88% 12%,#ffe9d7 0,transparent 32%),radial-gradient(ellipse at 90% 88%,#fff0e5 0,transparent 36%),#fffaf6;transition:background 600ms ease}
+body.fire-theme header{background:#fffaf5c7;border-bottom-color:#ffdfc9}
+body.fire-theme .logo span,body.fire-theme .eyebrow{color:#e9562c}
+body.fire-theme nav .selected{background:linear-gradient(135deg,#fa7642,#e4492a);box-shadow:0 7px 20px #eb633334}
+body.fire-theme .primary{background:linear-gradient(135deg,#f87642,#e44c2d)}
+body.fire-theme .primary:hover{background:#db4528}
+body.fire-theme #serversPage .card,body.fire-theme #serversPage .table-card{border-color:#f3e5db}
+body.fire-theme #serversPage .stats>.card{background:linear-gradient(145deg,#fffefa,#fff8f2)}
+body.fire-theme .selected-server{background:#fff6ee}
+body.fire-theme .selected-server .server-select{color:#db4e2b}
+body.fire-theme .metric-gauge[data-metric="cpu"] .mini-gauge-ring{--gauge-color:#f05b2d!important}
+body.fire-theme .mini-gauge-ring.burning-gauge{filter:drop-shadow(0 0 7px #ff9b575c);animation:flamePulse 1.7s ease-in-out infinite alternate}
+#serverRows .fire-alert-row{position:relative}
+#serverRows .fire-alert-row td{background:#fff9f3;border-top:1px solid #ffd1ae;border-bottom:1px solid #ffd1ae}
+#serverRows .fire-alert-row td:first-child{border-left:1px solid #ffd1ae;border-radius:13px 0 0 13px;position:relative}
+#serverRows .fire-alert-row td:last-child{border-right:1px solid #ffd1ae;border-radius:0 13px 13px 0}
+body.fire-theme #serverRows .fire-alert-row td{background:#fff7ef}
+#serverRows .fire-embers{position:absolute;z-index:0;right:-900%;top:0;width:900%;height:100%;pointer-events:none;opacity:0}
+body.fire-theme #serverRows .fire-alert-row .fire-embers{opacity:1;background-image:radial-gradient(ellipse 3px 7px at 15% 82%,#ff9346a6 15%,transparent 72%),radial-gradient(ellipse 2px 5px at 38% 73%,#ff6c35ad 15%,transparent 74%),radial-gradient(ellipse 3px 6px at 67% 82%,#ffaf54a0 15%,transparent 72%),radial-gradient(ellipse 2px 5px at 88% 70%,#ec4e31a8 15%,transparent 75%);animation:embersRise 2.6s ease-in-out infinite alternate}
+body.fire-theme #serverRows .fire-alert-row .server-select,body.fire-theme #serverRows .fire-alert-row .muted{position:relative;z-index:1}
+@keyframes flamePulse{from{filter:drop-shadow(0 0 3px #ff9b5740)}to{filter:drop-shadow(0 0 10px #ff712c87)}}
+@keyframes embersRise{from{transform:translateY(2px);opacity:.55}to{transform:translateY(-3px);opacity:1}}
+@media(max-width:760px){.header-tools{gap:6px;flex-wrap:wrap;justify-content:flex-end}.theme-switch button{padding:6px 9px;font-size:11px}}
+@media(prefers-reduced-motion:reduce){body.fire-theme,body.fire-theme #serverRows .fire-alert-row .fire-embers,#serverRows .mini-gauge-ring.burning-gauge{animation:none;transition:none}}
+
+.fire-notice{display:inline-flex;align-items:center;margin:8px 0 2px;padding:7px 11px;border:1px solid #ffd1ae;border-radius:999px;background:#fff3e9;color:#d84c27;font-size:11px;font-weight:650;box-shadow:0 4px 14px #f0773814}
