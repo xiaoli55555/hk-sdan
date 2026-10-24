@@ -268,3 +268,120 @@ body.fire-theme .wechat-message.mine .wechat-bubble{border-color:#f0c1a5;backgro
 @media(max-width:760px){.wechat-shell{grid-template-columns:104px minmax(0,1fr);height:calc(100vh - 280px);min-height:390px}.wechat-contacts-head{padding:15px 9px}.wechat-contacts-head small{font-size:9px}.wechat-thread{justify-content:center;padding:10px 4px}.wechat-thread-copy,.wechat-unread{display:none}.wechat-chat-head{padding:10px 12px}.wechat-messages{padding:16px 10px}.wechat-message{max-width:88%}.wechat-composer{padding:10px}.wechat-composer-foot small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.wechat-thread{transition:none}}
 #messagesMenu{display:flex;align-items:center;gap:6px}
+
+/* Higher contrast palettes: keep the Apple-like light standard theme and make the fire accents unmistakable. */
+:root{--standard-ink:#152033;--standard-secondary:#40516a;--standard-muted:#58677c;--standard-line:#cfd8e5;--standard-blue:#075bc3;--standard-blue-soft:#dbeafe;--fire-ink:#35190f;--fire-secondary:#5e3829;--fire-muted:#765744;--fire-line:#d9a487;--fire:#bd3515;--fire-hover:#98270d;--fire-soft:#ffe0cc}
+body:not(.fire-theme){color:var(--standard-ink);background:radial-gradient(ellipse at 0 0,#dce7f7,transparent 45%),radial-gradient(ellipse at 100% 100%,#e8e5f3,transparent 45%),#eef2f7}
+body:not(.fire-theme) aside{background:#edf2f9f5;border-right-color:#cbd5e1}
+body:not(.fire-theme) header{background:#ffffffed;border-bottom-color:#d1d9e4;color:#475569}
+body:not(.fire-theme) header b,body:not(.fire-theme) h1,body:not(.fire-theme) h2{color:var(--standard-ink)}
+body:not(.fire-theme) .logo span,body:not(.fire-theme) .eyebrow{color:var(--standard-blue)}
+body:not(.fire-theme) p,body:not(.fire-theme) label,body:not(.fire-theme) nav button{color:var(--standard-secondary)}
+body:not(.fire-theme) .caption,body:not(.fire-theme) .sidefoot,body:not(.fire-theme) .sidefoot small,body:not(.fire-theme) footer,body:not(.fire-theme) .muted,body:not(.fire-theme) .table-note,body:not(.fire-theme) .empty{color:var(--standard-muted)}
+body:not(.fire-theme) .card,body:not(.fire-theme) .table-card,body:not(.fire-theme) .login-card{background:#fff;border-color:var(--standard-line);box-shadow:0 10px 30px #253b580d}
+body:not(.fire-theme) th{background:#e8edf4;color:#344256}
+body:not(.fire-theme) td{color:#35445a;border-bottom-color:#dbe2eb}
+body:not(.fire-theme) td strong{color:#1e2b3d}
+body:not(.fire-theme) .stats small,body:not(.fire-theme) .stats span{color:#526279}
+body:not(.fire-theme) input,body:not(.fire-theme) select,body:not(.fire-theme) textarea{background:#fff;border-color:#aebaca;color:#172235}
+body:not(.fire-theme) input::placeholder,body:not(.fire-theme) textarea::placeholder{color:#69788d;opacity:1}
+body:not(.fire-theme) nav .selected{background:var(--standard-blue);color:#fff;box-shadow:0 5px 14px #075bc333}
+body:not(.fire-theme) nav button:hover{background:#dce7f7;color:#063e83}
+body:not(.fire-theme) button:not(.primary):not(.metric-link):not(.close):not(.danger){background:#e2e8f0;color:#26374d}
+body:not(.fire-theme) button:not(.primary):not(.metric-link):not(.close):not(.danger):hover{background:#cbdcf2;color:#063e83}
+body:not(.fire-theme) .primary{background:#075bc3;color:#fff}
+body:not(.fire-theme) .primary:hover{background:#034a9f;color:#fff}
+body:not(.fire-theme) td button:not(.metric-link){background:#dbeafe;color:#064a9b}
+body:not(.fire-theme) .metric-link{color:#075bc3}
+body:not(.fire-theme) #serverRows .gauge-copy small,body:not(.fire-theme) #serverRows .disk-label,body:not(.fire-theme) #serverRows .connection-secondary span{color:#596b83}
+body:not(.fire-theme) #serverRows .network-rate,body:not(.fire-theme) #serverRows .connection-counters .metric-link{color:#445975}
+body:not(.fire-theme) #serverRows .network-rate b,body:not(.fire-theme) #serverRows .connection-secondary strong{color:#273e5c}
+body:not(.fire-theme) #serverRows .mini-gauge-ring span{color:#20324a}
+body:not(.fire-theme) .renewal-detail>span,body:not(.fire-theme) .renewal-countdown>span,body:not(.fire-theme) .renewal-detail>small,body:not(.fire-theme) .renewal-countdown>small,body:not(.fire-theme) .renewal-help{color:#596a80}
+body:not(.fire-theme) .renewal-progress-area>div:first-child{color:#596a80}
+body:not(.fire-theme) .wechat-contacts-head small,body:not(.fire-theme) .wechat-chat-head small,body:not(.fire-theme) .wechat-thread-copy small,body:not(.fire-theme) .wechat-message time,body:not(.fire-theme) .wechat-composer-foot small{color:#5d6a7b}
+body:not(.fire-theme) .wechat-empty,body:not(.fire-theme) .wechat-empty-state,body:not(.fire-theme) .wechat-empty-state small{color:#5d6a7b}
+body:not(.fire-theme) .announcement-admin-item-head>small,body:not(.fire-theme) .announcement-list-card .table-head>span{color:#5d6878}
+body:not(.fire-theme) .monitor-stat>small,body:not(.fire-theme) .monitor-stat>div,body:not(.fire-theme) .monitor-axis,body:not(.fire-theme) .monitor-times,body:not(.fire-theme) .chart-scale,body:not(.fire-theme) .chart-times{color:#56657a}
+body:not(.fire-theme) .badge{background:#e1e7ef;color:#344256}
+body:not(.fire-theme) .badge.online,body:not(.fire-theme) .renewal-admin-state.active{background:#d8f0df;color:#17552e}
+body:not(.fire-theme) .renewal-admin-state.expired,body:not(.fire-theme) .renewal-status.renewal-expired-status,body:not(.fire-theme) .renewal-status.renewal-unset-status{background:#ffe0dc;color:#84251e}
+body:not(.fire-theme) .renewal-soon-status{background:#ffedcf;color:#724200}
+body:not(.fire-theme) .announcement-status.published{background:#ffe0d2;color:#85270d}
+body:not(.fire-theme) .danger{background:#ffe0dc!important;color:#84251e!important}
+
+body.fire-theme{color:var(--fire-ink);background:radial-gradient(ellipse at 88% 10%,#ffd5b5 0,transparent 33%),radial-gradient(ellipse at 8% 95%,#ffe0c9 0,transparent 36%),#fff1e5}
+body.fire-theme aside{background:#fff4e9f5;border-right-color:#d8a486}
+body.fire-theme header{background:#fff8f0ed;border-bottom-color:#d8a486;color:#55392d}
+body.fire-theme header b,body.fire-theme h1,body.fire-theme h2{color:#35190f}
+body.fire-theme .logo span,body.fire-theme .eyebrow{color:#a92d0e}
+body.fire-theme p,body.fire-theme label,body.fire-theme nav button{color:#563627}
+body.fire-theme .caption,body.fire-theme .sidefoot,body.fire-theme .sidefoot small,body.fire-theme footer,body.fire-theme .muted,body.fire-theme .table-note,body.fire-theme .empty{color:#684936}
+body.fire-theme .card,body.fire-theme .table-card,body.fire-theme .login-card{background:#fffaf5;border-color:#d9a487;box-shadow:0 12px 32px #79331518}
+body.fire-theme th{background:#f4d9c5;color:#432416}
+body.fire-theme td{color:#4a3022;border-bottom-color:#ead0bd}
+body.fire-theme td strong{color:#321b10}
+body.fire-theme .stats small,body.fire-theme .stats span{color:#5c4030}
+body.fire-theme input,body.fire-theme select,body.fire-theme textarea{background:#fffdf9;border-color:#b77c5d;color:#35190f}
+body.fire-theme input::placeholder,body.fire-theme textarea::placeholder{color:#725541;opacity:1}
+body.fire-theme nav .selected{background:linear-gradient(135deg,#c63b16,#92270d);color:#fff;box-shadow:0 6px 18px #ac371b52}
+body.fire-theme nav button:hover{background:#f4d9c5;color:#6d210d}
+body.fire-theme button:not(.primary):not(.metric-link):not(.close):not(.danger){background:#f1d7c4;color:#482919}
+body.fire-theme button:not(.primary):not(.metric-link):not(.close):not(.danger):hover{background:#e7bea2;color:#5c1e0b}
+body.fire-theme .primary{background:linear-gradient(135deg,#c63b16,#92270d);color:#fff;box-shadow:0 4px 12px #a92f1750}
+body.fire-theme .primary:hover{background:#7f200a;color:#fff}
+body.fire-theme td button:not(.metric-link){background:#f3d1b7;color:#6b260d}
+body.fire-theme .metric-link{color:#8b2b0c}
+body.fire-theme .metric-link:hover{background:#f8ddc8;color:#6b1d08}
+body.fire-theme #message{color:#752b0e}
+body.fire-theme #serverRows .gauge-copy small,body.fire-theme #serverRows .disk-label,body.fire-theme #serverRows .connection-secondary span{color:#654735}
+body.fire-theme #serverRows .network-rate,body.fire-theme #serverRows .connection-counters .metric-link{color:#533a2a}
+body.fire-theme #serverRows .network-rate b,body.fire-theme #serverRows .connection-secondary strong{color:#452719}
+body.fire-theme #serverRows .mini-gauge-ring span{color:#35190f}
+body.fire-theme #serverRows .mini-gauge-ring::before{background:#fffaf5}
+body.fire-theme .renewal-card{border-color:#d99b77;background:linear-gradient(140deg,#fffaf5 0%,#fff4e9 55%,#ffdfc7 100%);box-shadow:0 16px 42px #87361922}
+body.fire-theme .renewal-heading-copy h2,body.fire-theme .renewal-detail>strong{color:#35190f}
+body.fire-theme .renewal-heading-copy p,body.fire-theme .renewal-detail>span,body.fire-theme .renewal-countdown>span,body.fire-theme .renewal-detail>small,body.fire-theme .renewal-countdown>small,body.fire-theme .renewal-help{color:#64432f}
+body.fire-theme .renewal-countdown>strong{color:#a72c0c}
+body.fire-theme .renewal-progress-area>div:first-child,body.fire-theme .renewal-progress-area>div:first-child strong{color:#563627}
+body.fire-theme .renewal-status{color:#174c31}
+body.fire-theme .renewal-soon-status{background:#ffddb0;color:#6e3200}
+body.fire-theme .renewal-expired-status,body.fire-theme .renewal-unset-status{background:#ffd4ca;color:#7a1d11}
+body.fire-theme .renewal-admin-state.active{background:#d8efdf;color:#174c31}
+body.fire-theme .renewal-admin-state.expired{background:#ffd4ca;color:#7a1d11}
+body.fire-theme .wechat-contacts,body.fire-theme .wechat-chat-head,body.fire-theme .wechat-composer{background:#fffaf5;border-color:#d9a487}
+body.fire-theme .wechat-chat,body.fire-theme .wechat-shell{background:#f8e4d3}
+body.fire-theme .wechat-contacts-head strong,body.fire-theme .wechat-chat-head strong,body.fire-theme .wechat-thread-copy strong,body.fire-theme .wechat-empty-state strong{color:#35190f}
+body.fire-theme .wechat-contacts-head small,body.fire-theme .wechat-chat-head small,body.fire-theme .wechat-thread-copy small,body.fire-theme .wechat-message time,body.fire-theme .wechat-composer-foot small,body.fire-theme .wechat-empty,body.fire-theme .wechat-empty-state,body.fire-theme .wechat-empty-state small{color:#64432f}
+body.fire-theme .wechat-thread:hover,body.fire-theme .wechat-thread.active{background:#ffdfc7}
+body.fire-theme .wechat-bubble{border-color:#d9b59d;background:#fffaf5;color:#35190f}
+body.fire-theme .wechat-message.mine .wechat-bubble{border-color:#b84b27;background:#c7441e;color:#fff}
+body.fire-theme .wechat-avatar{background:linear-gradient(145deg,#f8c69f,#ec9a68);color:#4e1d0b}
+body.fire-theme .wechat-unread,body.fire-theme .nav-badge{background:#a91e16;color:#fff}
+body.fire-theme .announcement-ticker{border-color:#861c0a;background:linear-gradient(105deg,#8c1f0d,#bc3212 50%,#d94a17);box-shadow:0 8px 25px #9e2b1750}
+body.fire-theme .announcement-admin-item{border-color:#d9a487;background:#fffaf5}
+body.fire-theme .announcement-admin-item-head strong{color:#35190f}
+body.fire-theme .announcement-admin-item-head>small,body.fire-theme .announcement-list-card .table-head>span{color:#64432f}
+body.fire-theme .announcement-admin-actions button:not(.danger){background:#f1d7c4;color:#482919}
+body.fire-theme dialog#modal{background:#fff8f0;border-color:#d9a487;color:#35190f}
+body.fire-theme dialog#modal h2{color:#35190f}
+body.fire-theme dialog#modal p,body.fire-theme dialog#modal label{color:#563627}
+body.fire-theme dialog#modal input,body.fire-theme dialog#modal select{background:#fffdf9;border-color:#b77c5d;color:#35190f}
+body.fire-theme dialog#modal .close{background:#f1d7c4;color:#482919}
+body.fire-theme dialog#modal .monitor-stat{background:#fffaf5;border-color:#d9a487}
+body.fire-theme dialog#modal .monitor-stat>small,body.fire-theme dialog#modal .monitor-stat>div,body.fire-theme dialog#modal .monitor-axis,body.fire-theme dialog#modal .monitor-times{color:#563627}
+body.fire-theme dialog#modal .monitor-stat b{color:#35190f}
+body.fire-theme dialog#modal .monitor-tooltip{background:#fffaf5;border-color:#c89472;color:#35190f}
+body.fire-theme dialog#modal .ip-current,body.fire-theme dialog#modal .network-grid>div,body.fire-theme dialog#modal .traffic-grid>div{background:#f7e0cc;border:1px solid #d5a180;color:#35190f}
+body.fire-theme dialog#modal .ip-current small,body.fire-theme dialog#modal .network-grid span,body.fire-theme dialog#modal .traffic-grid small{color:#563627}
+body.fire-theme dialog#modal .ip-current strong,body.fire-theme dialog#modal .traffic-grid strong{color:#35190f}
+body.fire-theme dialog#modal .metric-tabs{background:#edd1ba}
+body.fire-theme dialog#modal .metric-tabs button[aria-selected="true"]{background:#fffaf5;color:#8b2b0c}
+body.fire-theme dialog#modal .detail-actions button:not(.primary):not(.danger),body.fire-theme dialog#modal .metric-controls button:not(.primary){background:#f1d7c4;color:#482919}
+body.fire-theme .metric-gauge[data-metric="cpu"] .mini-gauge-ring{--gauge-color:#c63b16!important}
+body.fire-theme .badge{background:#ead3c1;color:#482919}
+body.fire-theme .badge.online,body.fire-theme .renewal-admin-state.active{background:#d8efdf;color:#174c31}
+body.fire-theme .renewal-admin-state.expired,body.fire-theme .renewal-status.renewal-expired-status,body.fire-theme .renewal-status.renewal-unset-status{background:#ffd4ca;color:#7a1d11}
+body.fire-theme .renewal-soon-status{background:#ffddb0;color:#6e3200}
+body.fire-theme .announcement-status.published{background:#ffd8c2;color:#762009}
+body.fire-theme .danger{background:#ffd4ca!important;color:#7a1d11!important}
