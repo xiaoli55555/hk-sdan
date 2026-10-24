@@ -271,44 +271,44 @@ body.fire-theme .wechat-message.mine .wechat-bubble{border-color:#f0c1a5;backgro
 
 /* Higher contrast palettes: keep the Apple-like light standard theme and make the fire accents unmistakable. */
 :root{--standard-ink:#152033;--standard-secondary:#40516a;--standard-muted:#58677c;--standard-line:#cfd8e5;--standard-blue:#075bc3;--standard-blue-soft:#dbeafe;--fire-ink:#35190f;--fire-secondary:#5e3829;--fire-muted:#765744;--fire-line:#d9a487;--fire:#bd3515;--fire-hover:#98270d;--fire-soft:#ffe0cc}
-body:not(.fire-theme){color:var(--standard-ink);background:radial-gradient(ellipse at 0 0,#dce7f7,transparent 45%),radial-gradient(ellipse at 100% 100%,#e8e5f3,transparent 45%),#eef2f7}
-body:not(.fire-theme) aside{background:#edf2f9f5;border-right-color:#cbd5e1}
-body:not(.fire-theme) header{background:#ffffffed;border-bottom-color:#d1d9e4;color:#475569}
-body:not(.fire-theme) header b,body:not(.fire-theme) h1,body:not(.fire-theme) h2{color:var(--standard-ink)}
-body:not(.fire-theme) .logo span,body:not(.fire-theme) .eyebrow{color:var(--standard-blue)}
-body:not(.fire-theme) p,body:not(.fire-theme) label,body:not(.fire-theme) nav button{color:var(--standard-secondary)}
-body:not(.fire-theme) .caption,body:not(.fire-theme) .sidefoot,body:not(.fire-theme) .sidefoot small,body:not(.fire-theme) footer,body:not(.fire-theme) .muted,body:not(.fire-theme) .table-note,body:not(.fire-theme) .empty{color:var(--standard-muted)}
-body:not(.fire-theme) .card,body:not(.fire-theme) .table-card,body:not(.fire-theme) .login-card{background:#fff;border-color:var(--standard-line);box-shadow:0 10px 30px #253b580d}
-body:not(.fire-theme) th{background:#e8edf4;color:#344256}
-body:not(.fire-theme) td{color:#35445a;border-bottom-color:#dbe2eb}
-body:not(.fire-theme) td strong{color:#1e2b3d}
-body:not(.fire-theme) .stats small,body:not(.fire-theme) .stats span{color:#526279}
-body:not(.fire-theme) input,body:not(.fire-theme) select,body:not(.fire-theme) textarea{background:#fff;border-color:#aebaca;color:#172235}
-body:not(.fire-theme) input::placeholder,body:not(.fire-theme) textarea::placeholder{color:#69788d;opacity:1}
-body:not(.fire-theme) nav .selected{background:var(--standard-blue);color:#fff;box-shadow:0 5px 14px #075bc333}
-body:not(.fire-theme) nav button:hover{background:#dce7f7;color:#063e83}
-body:not(.fire-theme) button:not(.primary):not(.metric-link):not(.close):not(.danger){background:#e2e8f0;color:#26374d}
-body:not(.fire-theme) button:not(.primary):not(.metric-link):not(.close):not(.danger):hover{background:#cbdcf2;color:#063e83}
-body:not(.fire-theme) .primary{background:#075bc3;color:#fff}
-body:not(.fire-theme) .primary:hover{background:#034a9f;color:#fff}
-body:not(.fire-theme) td button:not(.metric-link){background:#dbeafe;color:#064a9b}
-body:not(.fire-theme) .metric-link{color:#075bc3}
-body:not(.fire-theme) #serverRows .gauge-copy small,body:not(.fire-theme) #serverRows .disk-label,body:not(.fire-theme) #serverRows .connection-secondary span{color:#596b83}
-body:not(.fire-theme) #serverRows .network-rate,body:not(.fire-theme) #serverRows .connection-counters .metric-link{color:#445975}
-body:not(.fire-theme) #serverRows .network-rate b,body:not(.fire-theme) #serverRows .connection-secondary strong{color:#273e5c}
-body:not(.fire-theme) #serverRows .mini-gauge-ring span{color:#20324a}
-body:not(.fire-theme) .renewal-detail>span,body:not(.fire-theme) .renewal-countdown>span,body:not(.fire-theme) .renewal-detail>small,body:not(.fire-theme) .renewal-countdown>small,body:not(.fire-theme) .renewal-help{color:#596a80}
-body:not(.fire-theme) .renewal-progress-area>div:first-child{color:#596a80}
-body:not(.fire-theme) .wechat-contacts-head small,body:not(.fire-theme) .wechat-chat-head small,body:not(.fire-theme) .wechat-thread-copy small,body:not(.fire-theme) .wechat-message time,body:not(.fire-theme) .wechat-composer-foot small{color:#5d6a7b}
-body:not(.fire-theme) .wechat-empty,body:not(.fire-theme) .wechat-empty-state,body:not(.fire-theme) .wechat-empty-state small{color:#5d6a7b}
-body:not(.fire-theme) .announcement-admin-item-head>small,body:not(.fire-theme) .announcement-list-card .table-head>span{color:#5d6878}
-body:not(.fire-theme) .monitor-stat>small,body:not(.fire-theme) .monitor-stat>div,body:not(.fire-theme) .monitor-axis,body:not(.fire-theme) .monitor-times,body:not(.fire-theme) .chart-scale,body:not(.fire-theme) .chart-times{color:#56657a}
-body:not(.fire-theme) .badge{background:#e1e7ef;color:#344256}
-body:not(.fire-theme) .badge.online,body:not(.fire-theme) .renewal-admin-state.active{background:#d8f0df;color:#17552e}
-body:not(.fire-theme) .renewal-admin-state.expired,body:not(.fire-theme) .renewal-status.renewal-expired-status,body:not(.fire-theme) .renewal-status.renewal-unset-status{background:#ffe0dc;color:#84251e}
-body:not(.fire-theme) .renewal-soon-status{background:#ffedcf;color:#724200}
-body:not(.fire-theme) .announcement-status.published{background:#ffe0d2;color:#85270d}
-body:not(.fire-theme) .danger{background:#ffe0dc!important;color:#84251e!important}
+body:not(.fire-theme):not(.eve-theme){color:var(--standard-ink);background:radial-gradient(ellipse at 0 0,#dce7f7,transparent 45%),radial-gradient(ellipse at 100% 100%,#e8e5f3,transparent 45%),#eef2f7}
+body:not(.fire-theme):not(.eve-theme) aside{background:#edf2f9f5;border-right-color:#cbd5e1}
+body:not(.fire-theme):not(.eve-theme) header{background:#ffffffed;border-bottom-color:#d1d9e4;color:#475569}
+body:not(.fire-theme):not(.eve-theme) header b,body:not(.fire-theme):not(.eve-theme) h1,body:not(.fire-theme):not(.eve-theme) h2{color:var(--standard-ink)}
+body:not(.fire-theme):not(.eve-theme) .logo span,body:not(.fire-theme):not(.eve-theme) .eyebrow{color:var(--standard-blue)}
+body:not(.fire-theme):not(.eve-theme) p,body:not(.fire-theme):not(.eve-theme) label,body:not(.fire-theme):not(.eve-theme) nav button{color:var(--standard-secondary)}
+body:not(.fire-theme):not(.eve-theme) .caption,body:not(.fire-theme):not(.eve-theme) .sidefoot,body:not(.fire-theme):not(.eve-theme) .sidefoot small,body:not(.fire-theme):not(.eve-theme) footer,body:not(.fire-theme):not(.eve-theme) .muted,body:not(.fire-theme):not(.eve-theme) .table-note,body:not(.fire-theme):not(.eve-theme) .empty{color:var(--standard-muted)}
+body:not(.fire-theme):not(.eve-theme) .card,body:not(.fire-theme):not(.eve-theme) .table-card,body:not(.fire-theme):not(.eve-theme) .login-card{background:#fff;border-color:var(--standard-line);box-shadow:0 10px 30px #253b580d}
+body:not(.fire-theme):not(.eve-theme) th{background:#e8edf4;color:#344256}
+body:not(.fire-theme):not(.eve-theme) td{color:#35445a;border-bottom-color:#dbe2eb}
+body:not(.fire-theme):not(.eve-theme) td strong{color:#1e2b3d}
+body:not(.fire-theme):not(.eve-theme) .stats small,body:not(.fire-theme):not(.eve-theme) .stats span{color:#526279}
+body:not(.fire-theme):not(.eve-theme) input,body:not(.fire-theme):not(.eve-theme) select,body:not(.fire-theme):not(.eve-theme) textarea{background:#fff;border-color:#aebaca;color:#172235}
+body:not(.fire-theme):not(.eve-theme) input::placeholder,body:not(.fire-theme):not(.eve-theme) textarea::placeholder{color:#69788d;opacity:1}
+body:not(.fire-theme):not(.eve-theme) nav .selected{background:var(--standard-blue);color:#fff;box-shadow:0 5px 14px #075bc333}
+body:not(.fire-theme):not(.eve-theme) nav button:hover{background:#dce7f7;color:#063e83}
+body:not(.fire-theme):not(.eve-theme) button:not(.primary):not(.metric-link):not(.close):not(.danger){background:#e2e8f0;color:#26374d}
+body:not(.fire-theme):not(.eve-theme) button:not(.primary):not(.metric-link):not(.close):not(.danger):hover{background:#cbdcf2;color:#063e83}
+body:not(.fire-theme):not(.eve-theme) .primary{background:#075bc3;color:#fff}
+body:not(.fire-theme):not(.eve-theme) .primary:hover{background:#034a9f;color:#fff}
+body:not(.fire-theme):not(.eve-theme) td button:not(.metric-link){background:#dbeafe;color:#064a9b}
+body:not(.fire-theme):not(.eve-theme) .metric-link{color:#075bc3}
+body:not(.fire-theme):not(.eve-theme) #serverRows .gauge-copy small,body:not(.fire-theme):not(.eve-theme) #serverRows .disk-label,body:not(.fire-theme):not(.eve-theme) #serverRows .connection-secondary span{color:#596b83}
+body:not(.fire-theme):not(.eve-theme) #serverRows .network-rate,body:not(.fire-theme):not(.eve-theme) #serverRows .connection-counters .metric-link{color:#445975}
+body:not(.fire-theme):not(.eve-theme) #serverRows .network-rate b,body:not(.fire-theme):not(.eve-theme) #serverRows .connection-secondary strong{color:#273e5c}
+body:not(.fire-theme):not(.eve-theme) #serverRows .mini-gauge-ring span{color:#20324a}
+body:not(.fire-theme):not(.eve-theme) .renewal-detail>span,body:not(.fire-theme):not(.eve-theme) .renewal-countdown>span,body:not(.fire-theme):not(.eve-theme) .renewal-detail>small,body:not(.fire-theme):not(.eve-theme) .renewal-countdown>small,body:not(.fire-theme):not(.eve-theme) .renewal-help{color:#596a80}
+body:not(.fire-theme):not(.eve-theme) .renewal-progress-area>div:first-child{color:#596a80}
+body:not(.fire-theme):not(.eve-theme) .wechat-contacts-head small,body:not(.fire-theme):not(.eve-theme) .wechat-chat-head small,body:not(.fire-theme):not(.eve-theme) .wechat-thread-copy small,body:not(.fire-theme):not(.eve-theme) .wechat-message time,body:not(.fire-theme):not(.eve-theme) .wechat-composer-foot small{color:#5d6a7b}
+body:not(.fire-theme):not(.eve-theme) .wechat-empty,body:not(.fire-theme):not(.eve-theme) .wechat-empty-state,body:not(.fire-theme):not(.eve-theme) .wechat-empty-state small{color:#5d6a7b}
+body:not(.fire-theme):not(.eve-theme) .announcement-admin-item-head>small,body:not(.fire-theme):not(.eve-theme) .announcement-list-card .table-head>span{color:#5d6878}
+body:not(.fire-theme):not(.eve-theme) .monitor-stat>small,body:not(.fire-theme):not(.eve-theme) .monitor-stat>div,body:not(.fire-theme):not(.eve-theme) .monitor-axis,body:not(.fire-theme):not(.eve-theme) .monitor-times,body:not(.fire-theme):not(.eve-theme) .chart-scale,body:not(.fire-theme):not(.eve-theme) .chart-times{color:#56657a}
+body:not(.fire-theme):not(.eve-theme) .badge{background:#e1e7ef;color:#344256}
+body:not(.fire-theme):not(.eve-theme) .badge.online,body:not(.fire-theme):not(.eve-theme) .renewal-admin-state.active{background:#d8f0df;color:#17552e}
+body:not(.fire-theme):not(.eve-theme) .renewal-admin-state.expired,body:not(.fire-theme):not(.eve-theme) .renewal-status.renewal-expired-status,body:not(.fire-theme):not(.eve-theme) .renewal-status.renewal-unset-status{background:#ffe0dc;color:#84251e}
+body:not(.fire-theme):not(.eve-theme) .renewal-soon-status{background:#ffedcf;color:#724200}
+body:not(.fire-theme):not(.eve-theme) .announcement-status.published{background:#ffe0d2;color:#85270d}
+body:not(.fire-theme):not(.eve-theme) .danger{background:#ffe0dc!important;color:#84251e!important}
 
 body.fire-theme{color:var(--fire-ink);background:radial-gradient(ellipse at 88% 10%,#ffd5b5 0,transparent 33%),radial-gradient(ellipse at 8% 95%,#ffe0c9 0,transparent 36%),#fff1e5}
 body.fire-theme aside{background:#fff4e9f5;border-right-color:#d8a486}
@@ -415,3 +415,99 @@ body.fire-theme .forwarding-request-state.submitted{border-color:#a8c9ac;backgro
 body.fire-theme .forwarding-note{color:#684936}
 body.fire-theme #forwardingRequestRows td,body.fire-theme .forwarding-no-requests{color:#482919!important}
 @media(max-width:600px){.forwarding-client-view{margin:16px 0}.forwarding-card{padding:22px 18px}.forwarding-mark{width:48px;height:48px;border-radius:14px;font-size:24px}}
+
+/* EVE-inspired tactical amber theme, with original HKSDAN instrumentation. */
+body.eve-theme{color:#e6e0d0;background:radial-gradient(ellipse at 82% 3%,#70512755 0,transparent 31%),radial-gradient(ellipse at 18% 90%,#3b4b4a38 0,transparent 35%),linear-gradient(145deg,#101418,#15191d 58%,#111518);--eve-ink:#f0e8d4;--eve-copy:#c8c1ae;--eve-muted:#989384;--eve-line:#45443c;--eve-amber:#e5b34d;--eve-amber-dark:#a87523;--eve-panel:#1b2024;--eve-panel-alt:#20262a}
+body.eve-theme aside{background:linear-gradient(180deg,#171c20f5,#12171bf5);border-right:1px solid #665337;box-shadow:8px 0 30px #0005}
+body.eve-theme aside::after{content:"";position:absolute;right:-32px;bottom:85px;width:95px;height:95px;border:1px solid #d99e3840;border-radius:50%;box-shadow:0 0 0 8px #d99e3810,0 0 0 18px #d99e3808;pointer-events:none}
+body.eve-theme header{background:#171c20e8;border-bottom:1px solid #514735;color:#d4c9ad}
+body.eve-theme header b,body.eve-theme h1,body.eve-theme h2{color:var(--eve-ink)}
+body.eve-theme .logo span,body.eve-theme .eyebrow{color:var(--eve-amber)}
+body.eve-theme p,body.eve-theme label,body.eve-theme nav button{color:var(--eve-copy)}
+body.eve-theme .caption,body.eve-theme .sidefoot,body.eve-theme .sidefoot small,body.eve-theme footer,body.eve-theme .muted,body.eve-theme .table-note,body.eve-theme .empty{color:var(--eve-muted)}
+body.eve-theme .status-dot{background:#e2b34d;box-shadow:0 0 9px #e2b34d80}
+body.eve-theme .card,body.eve-theme .table-card,body.eve-theme .login-card{background:linear-gradient(145deg,#20262a,#1a1f23);border:1px solid var(--eve-line);box-shadow:0 14px 36px #0005,inset 0 1px #ffffff08}
+body.eve-theme th{background:#292b29;color:#e6d9b8;border-bottom:1px solid #514735}
+body.eve-theme td{color:#d1cbb9;border-bottom-color:#383d3e}
+body.eve-theme td strong{color:#f1e5c8}
+body.eve-theme .stats small,body.eve-theme .stats span{color:#c2bba8}
+body.eve-theme .stats strong{color:#f0d38d;text-shadow:0 0 18px #d5993330}
+body.eve-theme input,body.eve-theme select,body.eve-theme textarea{background:#111619;border-color:#5f5743;color:#eee3c8}
+body.eve-theme input::placeholder,body.eve-theme textarea::placeholder{color:#aaa28f;opacity:1}
+body.eve-theme nav .selected{background:linear-gradient(105deg,#765522,#493816);color:#fff4d6;box-shadow:0 5px 18px #9c702b40,inset 0 0 0 1px #e7bd5c45}
+body.eve-theme nav button:hover{background:#363126;color:#ffe1a0}
+body.eve-theme button:not(.primary):not(.metric-link):not(.close):not(.danger){background:#34332e;color:#e7dcc1;border:1px solid #514b3d}
+body.eve-theme button:not(.primary):not(.metric-link):not(.close):not(.danger):hover{background:#49412f;color:#ffe4a3;border-color:#92733e}
+body.eve-theme .primary{background:linear-gradient(135deg,#edc25e,#be8428);color:#20190d;border:1px solid #f3d47a;box-shadow:0 4px 16px #d19b3b35;font-weight:750}
+body.eve-theme .primary:hover{background:linear-gradient(135deg,#f8d477,#d49a39);color:#1b160c}
+body.eve-theme td button:not(.metric-link){background:#34332e;color:#f1d38a;border-color:#66583a}
+body.eve-theme .metric-link{color:#e6bd5b}
+body.eve-theme .metric-link:hover{background:#393329;color:#ffe394}
+body.eve-theme #message{color:#f1c967}
+body.eve-theme .summary-scope{color:#ddd1af}
+body.eve-theme .summary-scope span{color:#aaa38f}
+body.eve-theme .selected-server{background:#332d20}
+body.eve-theme .selected-server .server-select{color:#ffdb78}
+body.eve-theme #serverRows .metric-gauge{color:#ddd4c0}
+body.eve-theme #serverRows .mini-gauge-ring{--gauge-color:#dca640!important;background:conic-gradient(var(--gauge-color) var(--gauge-value),#353b3d 0);filter:drop-shadow(0 0 5px #d3983330)}
+body.eve-theme #serverRows .mini-gauge-ring::before{background:#1b2024}
+body.eve-theme #serverRows .mini-gauge-ring span,body.eve-theme #serverRows .gauge-copy strong{color:#f0e2bd}
+body.eve-theme #serverRows .gauge-copy small,body.eve-theme #serverRows .disk-label,body.eve-theme #serverRows .connection-secondary span{color:#bbb39f}
+body.eve-theme #serverRows .network-rate,body.eve-theme #serverRows .connection-counters .metric-link{color:#cec4aa}
+body.eve-theme #serverRows .network-rate b,body.eve-theme #serverRows .connection-secondary strong{color:#ecd08a}
+body.eve-theme #serverRows .network-rate i{background:#343a3c}
+body.eve-theme #serverRows .network-rate em{background:linear-gradient(90deg,#eac766,#bb842e)}
+body.eve-theme #serverRows .network-rate:nth-child(2) em{background:linear-gradient(90deg,#e5a64e,#9e5d2c)}
+body.eve-theme #serverRows .server-ip{background:#202c2e;color:#99d4c8;border-color:#44615d}
+body.eve-theme .badge{background:#34332e;color:#ded2b3}
+body.eve-theme .badge.online{background:#253d35;color:#a8dec1;border:1px solid #426653}
+body.eve-theme .renewal-card,body.eve-theme .forwarding-card{border-color:#665537;background:linear-gradient(145deg,#24282a,#1b2022 65%,#342b1d);box-shadow:0 18px 48px #0006}
+body.eve-theme .renewal-card::after{background:radial-gradient(circle,#d49b3430,transparent 69%)}
+body.eve-theme .renewal-heading-copy h2,body.eve-theme .renewal-detail>strong,body.eve-theme .forwarding-card h2,body.eve-theme .forwarding-admin-intro h2{color:#f0e5c9}
+body.eve-theme .renewal-heading-copy p,body.eve-theme .renewal-detail>span,body.eve-theme .renewal-countdown>span,body.eve-theme .renewal-detail>small,body.eve-theme .renewal-countdown>small,body.eve-theme .renewal-help,body.eve-theme .forwarding-card>p,body.eve-theme .forwarding-admin-intro p{color:#c5bda9}
+body.eve-theme .renewal-countdown>strong{color:#f0c257}
+body.eve-theme .renewal-card-details{border-color:#514735}
+body.eve-theme .renewal-progress{background:#333a3b}
+body.eve-theme .renewal-progress>span{background:linear-gradient(90deg,#f1ca62,#b87928)}
+body.eve-theme .renewal-status{background:#263e33;color:#b7e2c2}
+body.eve-theme .renewal-soon-status{background:#4a3818;color:#ffdc83}
+body.eve-theme .renewal-expired-status,body.eve-theme .renewal-unset-status{background:#4a2923;color:#ffc0a7}
+body.eve-theme .wechat-shell,body.eve-theme .wechat-chat{background:#171c20;border-color:#45443c}
+body.eve-theme .wechat-contacts,body.eve-theme .wechat-chat-head,body.eve-theme .wechat-composer{background:#1b2024;border-color:#45443c}
+body.eve-theme .wechat-thread:hover,body.eve-theme .wechat-thread.active{background:#343126}
+body.eve-theme .wechat-thread-copy strong,body.eve-theme .wechat-chat-head strong,body.eve-theme .wechat-contacts-head strong,body.eve-theme .wechat-empty-state strong{color:#eee2c3}
+body.eve-theme .wechat-thread-copy small,body.eve-theme .wechat-chat-head small,body.eve-theme .wechat-contacts-head small,body.eve-theme .wechat-message time,body.eve-theme .wechat-composer-foot small,body.eve-theme .wechat-empty,body.eve-theme .wechat-empty-state,body.eve-theme .wechat-empty-state small{color:#aaa38f}
+body.eve-theme .wechat-bubble{background:#282d2e;border-color:#4c504c;color:#eee3cd}
+body.eve-theme .wechat-message.mine .wechat-bubble{background:#745521;border-color:#bd9346;color:#fff1c9}
+body.eve-theme .wechat-avatar{background:linear-gradient(145deg,#66542e,#383527);color:#f4d987}
+body.eve-theme .wechat-unread,body.eve-theme .nav-badge{background:#a94b27;color:#fff}
+body.eve-theme .announcement-ticker{border-color:#ae6b28;background:linear-gradient(105deg,#70441e,#a46b25 50%,#b8802f);box-shadow:0 8px 25px #0005}
+body.eve-theme .announcement-admin-item{border-color:#514735;background:#202528}
+body.eve-theme .announcement-admin-item-head strong{color:#eee2c3}
+body.eve-theme .announcement-admin-item-head>small,body.eve-theme .announcement-list-card .table-head>span{color:#b8ae96}
+body.eve-theme .announcement-admin-actions button:not(.danger){background:#34332e;color:#e7d9b6}
+body.eve-theme dialog#modal{background:#1d2326;border-color:#665537;color:#e6e0d0;box-shadow:0 30px 100px #000a,0 0 0 1px #edc25e12 inset}
+body.eve-theme dialog#modal h2{color:#f0e5c9}
+body.eve-theme dialog#modal p,body.eve-theme dialog#modal label{color:#c8c1ae}
+body.eve-theme dialog#modal input,body.eve-theme dialog#modal select{background:#111619;border-color:#5f5743;color:#eee3c8}
+body.eve-theme dialog#modal .close{background:#34332e;color:#e7d9b6}
+body.eve-theme dialog#modal .monitor-stat{background:#20262a;border-color:#514735}
+body.eve-theme dialog#modal .monitor-stat>small,body.eve-theme dialog#modal .monitor-stat>div,body.eve-theme dialog#modal .monitor-axis,body.eve-theme dialog#modal .monitor-times{color:#bcb39f}
+body.eve-theme dialog#modal .monitor-stat b{color:#e8d8b4}
+body.eve-theme dialog#modal .monitor-tooltip{background:#1d2326;border-color:#655638;color:#eee3c8}
+body.eve-theme dialog#modal .ip-current,body.eve-theme dialog#modal .network-grid>div,body.eve-theme dialog#modal .traffic-grid>div{background:#252b2c;border:1px solid #514735;color:#eee3c8}
+body.eve-theme dialog#modal .ip-current small,body.eve-theme dialog#modal .network-grid span,body.eve-theme dialog#modal .traffic-grid small{color:#c8c1ae}
+body.eve-theme dialog#modal .ip-current strong,body.eve-theme dialog#modal .traffic-grid strong{color:#f1d48d}
+body.eve-theme dialog#modal .metric-tabs{background:#2b2c29}
+body.eve-theme dialog#modal .metric-tabs button[aria-selected="true"]{background:#e4b955;color:#211b0e}
+body.eve-theme dialog#modal .detail-actions button:not(.primary):not(.danger),body.eve-theme dialog#modal .metric-controls button:not(.primary){background:#34332e;color:#e7d9b6;border-color:#514b3d}
+body.eve-theme .metric-window>h2{color:#f0e5c9}
+body.eve-theme .metric-window>p{color:#c8c1ae}
+body.eve-theme .monitor-empty{background:#252b2c;color:#bab19a}
+body.eve-theme .danger{background:#4a2923!important;color:#ffc0a7!important}
+body.eve-theme .theme-switch{border-color:#514735;background:#171b1e}
+body.eve-theme .theme-switch button{color:#c5bda9}
+body.eve-theme .theme-switch button.active{background:#3b3322;color:#f2d689;box-shadow:inset 0 0 0 1px #c89b4380}
+body.eve-theme .theme-switch #themeEve.active{background:linear-gradient(135deg,#e6bd5b,#ae7928);color:#21190d;box-shadow:0 3px 12px #d49d3740}
+body.eve-theme .metric-gauge[data-metric="cpu"] .mini-gauge-ring{--gauge-color:#e7b850!important}
+@media(max-width:760px){.theme-switch{gap:1px}.theme-switch button{padding:6px 7px;font-size:10px}}
