@@ -51,12 +51,15 @@ def init():
         INSERT OR IGNORE INTO settings(key,value) VALUES('admin_path','/admin');
         CREATE TABLE IF NOT EXISTS announcements(id INTEGER PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1, created INTEGER NOT NULL, updated INTEGER NOT NULL, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL);
         CREATE TABLE IF NOT EXISTS client_subscriptions(user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, starts_on TEXT NOT NULL, expires_on TEXT NOT NULL, cycle_months INTEGER NOT NULL CHECK(cycle_months BETWEEN 1 AND 60), updated_at INTEGER NOT NULL, updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL);
+        CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY, thread_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, recipient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, content TEXT NOT NULL, created INTEGER NOT NULL, read_at INTEGER);
+        CREATE INDEX IF NOT EXISTS messages_thread_order ON messages(thread_user_id,id);
+        CREATE INDEX IF NOT EXISTS messages_recipient_unread ON messages(recipient_id,read_at);
         CREATE INDEX IF NOT EXISTS announcements_published ON announcements(published,created DESC);
         CREATE TABLE IF NOT EXISTS metric_points(server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           stamp INTEGER NOT NULL,cpu REAL,memory REAL,tcp REAL,udp REAL,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));
         CREATE TABLE IF NOT EXISTS install_tickets(hash TEXT PRIMARY KEY,server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           expires INTEGER NOT NULL,used INTEGER NOT NULL DEFAULT 0);
-        PRAGMA user_version=9;
+        PRAGMA user_version=10;
         ''')
 
         if 'password_encrypted' not in [r[1] for r in db.execute('PRAGMA table_info(users)')]:
@@ -129,7 +132,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.3.0')
+    return jsonify(ok=True, version='0.3.1')
 
 @app.post('/api/login')
 def login():
@@ -210,6 +213,63 @@ def delete_announcement(aid):
         if not row:return error('公告不存在',404)
         db.execute('DELETE FROM announcements WHERE id=?',(aid,));audit(db,'删除公告 #'+str(aid)+' '+row['title'][:80])
     return jsonify(ok=True)
+
+def validate_message_client(db, uid):
+    client=db.execute("SELECT id,username FROM users WHERE id=? AND role='client'",(uid,)).fetchone()
+    if not client:return None
+    if g.user['role']=='client' and g.user['id']!=uid:return None
+    return client
+
+@app.get('/api/messages/unread')
+@auth()
+def unread_messages():
+    with connect() as db:
+        if g.user['role']=='admin':count=db.execute("SELECT COUNT(*) FROM messages WHERE recipient_id IN (SELECT id FROM users WHERE role='admin') AND read_at IS NULL").fetchone()[0]
+        else:count=db.execute('SELECT COUNT(*) FROM messages WHERE recipient_id=? AND read_at IS NULL',(g.user['id'],)).fetchone()[0]
+    return jsonify(unread=count)
+
+@app.get('/api/messages/threads')
+@auth(True)
+def message_threads():
+    with connect() as db:
+        rows=db.execute('''SELECT u.id user_id,u.username,
+          (SELECT content FROM messages m WHERE m.thread_user_id=u.id ORDER BY m.id DESC LIMIT 1) last_content,
+          (SELECT created FROM messages m WHERE m.thread_user_id=u.id ORDER BY m.id DESC LIMIT 1) last_created,
+          (SELECT sender_id FROM messages m WHERE m.thread_user_id=u.id ORDER BY m.id DESC LIMIT 1) last_sender_id,
+          (SELECT COUNT(*) FROM messages m WHERE m.thread_user_id=u.id AND m.recipient_id IN (SELECT id FROM users WHERE role='admin') AND m.read_at IS NULL) unread
+          FROM users u WHERE u.role='client' ORDER BY COALESCE(last_created,0) DESC,u.username COLLATE NOCASE''').fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.get('/api/messages/threads/<int:uid>')
+@auth()
+def get_message_thread(uid):
+    with connect() as db:
+        client=validate_message_client(db,uid)
+        if not client:return error('会话不存在或无权查看',404)
+        if g.user['role']=='admin':db.execute("UPDATE messages SET read_at=? WHERE thread_user_id=? AND recipient_id IN (SELECT id FROM users WHERE role='admin') AND read_at IS NULL",(int(time.time()),uid))
+        else:db.execute('UPDATE messages SET read_at=? WHERE thread_user_id=? AND recipient_id=? AND read_at IS NULL',(int(time.time()),uid,g.user['id']))
+        rows=db.execute('''SELECT m.id,m.sender_id,m.recipient_id,m.content,m.created,m.read_at,u.username sender_name
+          FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.thread_user_id=? ORDER BY m.id ASC LIMIT 500''',(uid,)).fetchall()
+    return jsonify(user_id=uid,username=client['username'],messages=[dict(r) for r in rows])
+
+@app.post('/api/messages/threads/<int:uid>')
+@auth()
+def send_thread_message(uid):
+    data=body();content=data.get('content')
+    if not isinstance(content,str) or not content.strip() or len(content.strip())>2000:return error('消息不能为空，且不能超过 2000 个字符')
+    if throttled('message:'+str(g.user['id']),20,60):return error('发送过于频繁，请稍后再试',429)
+    with connect() as db:
+        client=validate_message_client(db,uid)
+        if not client:return error('会话不存在或无权发送',404)
+        if g.user['role']=='client':
+            admin=db.execute("SELECT id FROM users WHERE role='admin' ORDER BY id LIMIT 1").fetchone()
+            if not admin:return error('暂时无法联系管理员',503)
+            recipient=admin['id']
+        else:recipient=uid
+        now=int(time.time())
+        cur=db.execute('INSERT INTO messages(thread_user_id,sender_id,recipient_id,content,created) VALUES(?,?,?,?,?)',(uid,g.user['id'],recipient,content.strip(),now))
+        row=db.execute('SELECT m.id,m.sender_id,m.recipient_id,m.content,m.created,m.read_at,u.username sender_name FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?',(cur.lastrowid,)).fetchone()
+    return jsonify(ok=True,message=dict(row)),201
 
 @app.get('/api/settings')
 @auth(True)
