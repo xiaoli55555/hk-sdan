@@ -511,3 +511,53 @@ body.eve-theme .theme-switch button.active{background:#3b3322;color:#f2d689;box-
 body.eve-theme .theme-switch #themeEve.active{background:linear-gradient(135deg,#e6bd5b,#ae7928);color:#21190d;box-shadow:0 3px 12px #d49d3740}
 body.eve-theme .metric-gauge[data-metric="cpu"] .mini-gauge-ring{--gauge-color:#e7b850!important}
 @media(max-width:760px){.theme-switch{gap:1px}.theme-switch button{padding:6px 7px;font-size:10px}}
+
+/* Match the selected tactical amber concept: three cockpit instruments above the server manifest. */
+#eveCockpit{display:none}
+body.eve-theme #serversPage .summary-scope,body.eve-theme #serversPage>.stats{display:none}
+body.eve-theme #eveCockpit{display:grid;grid-template-columns:1fr 1fr 1.12fr;gap:12px;margin:16px 0 18px}
+body.eve-theme .eve-instrument{position:relative;min-width:0;overflow:hidden;padding:15px 16px 12px;border:1px solid #66583b;border-radius:9px;background:linear-gradient(145deg,#202528,#171c1f 70%);box-shadow:0 12px 30px #0005,inset 0 1px #ffffff08}
+body.eve-theme .eve-instrument::before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,#d8a64a 25%,#f2d17c 48%,transparent 88%);opacity:.82}
+body.eve-theme .eve-instrument-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-bottom:11px;border-bottom:1px solid #494638}
+body.eve-theme .eve-instrument-head>div{display:grid;gap:5px;min-width:0}
+body.eve-theme .eve-instrument-head span{color:#f0d27f;font-size:12px;font-weight:750;letter-spacing:.1em}
+body.eve-theme .eve-instrument-head small,body.eve-theme .eve-instrument-head code{color:#a9a18d;font-size:9px;letter-spacing:.08em}
+body.eve-theme .eve-instrument-head code{font-family:ui-monospace,monospace;white-space:nowrap}
+body.eve-theme .eve-instrument-body{display:flex;align-items:center;justify-content:space-around;gap:12px;padding:14px 0 6px}
+body.eve-theme .eve-dial{--eve-value:0%;--eve-angle:-135deg;position:relative;display:grid;place-items:center;flex:0 0 clamp(112px,12vw,164px);width:clamp(112px,12vw,164px);aspect-ratio:1;border:1px solid #80704b;border-radius:50%;background:repeating-conic-gradient(from 0deg,#d0a449 0 1deg,transparent 1deg 5deg) center/100% 100%,conic-gradient(from 225deg,#e8b951 0 var(--eve-value),#3c4242 0);box-shadow:0 0 22px #ca923221,inset 0 0 24px #0008}
+body.eve-theme .eve-dial::before{content:"";position:absolute;inset:12px;border:1px solid #6b6045;border-radius:50%;background:radial-gradient(circle at 50% 42%,#292d2b,#121719 70%);box-shadow:inset 0 0 18px #000b}
+body.eve-theme .eve-dial::after{content:"";position:absolute;left:calc(50% - 1px);top:16%;width:2px;height:34%;transform-origin:50% 100%;transform:rotate(var(--eve-angle));background:linear-gradient(#fff0ae,#d29434);box-shadow:0 0 8px #f2c55f}
+body.eve-theme .eve-dial>div{position:relative;z-index:1;display:grid;justify-items:center;gap:3px;margin-top:13px}
+body.eve-theme .eve-dial strong{color:#f5d987;font:700 clamp(23px,2vw,33px)/1 ui-monospace,monospace;text-shadow:0 0 14px #d89f3750}
+body.eve-theme .eve-dial small{color:#c8b98d;font-size:9px;letter-spacing:.14em}
+body.eve-theme .eve-readouts{display:grid;gap:9px;min-width:90px;flex:1}
+body.eve-theme .eve-readouts>div:not(.eve-readout-line){display:flex;justify-content:space-between;gap:8px;align-items:baseline;border-bottom:1px solid #343a39;padding-bottom:5px}
+body.eve-theme .eve-readouts span,body.eve-theme .eve-readouts>small{color:#aaa38f;font-size:8px;letter-spacing:.1em}
+body.eve-theme .eve-readouts strong{color:#ead9a9;font:600 11px ui-monospace,monospace;text-align:right}
+body.eve-theme .eve-readout-line{height:5px;background:#343a38;border-radius:3px;overflow:hidden}
+body.eve-theme .eve-readout-line i{display:block;width:62%;height:100%;background:linear-gradient(90deg,#bd852c,#f1d377);box-shadow:0 0 8px #e1ad4b80}
+body.eve-theme .eve-scale{display:flex;justify-content:space-between;margin:0 7px;color:#a59c84;font:8px ui-monospace,monospace}
+body.eve-theme .eve-network-direction{display:grid;grid-template-columns:32px minmax(75px,1fr) minmax(60px,1.2fr);align-items:center;gap:9px;margin-top:11px;padding:9px;border:1px solid #494638;border-radius:6px;background:linear-gradient(90deg,#282b29,#1a1f20)}
+body.eve-theme .eve-direction-icon{display:grid;place-items:center;width:29px;height:29px;border:1px solid #79653b;border-radius:5px;color:#f1d17a;font-size:18px}
+body.eve-theme .eve-direction-copy{display:grid;gap:3px;min-width:0}
+body.eve-theme .eve-direction-copy small,body.eve-theme .eve-network-counters small,body.eve-theme .eve-network-foot span{color:#aaa38f;font-size:8px;letter-spacing:.1em}
+body.eve-theme .eve-direction-copy strong{color:#f1dfac;font:600 clamp(12px,1.3vw,17px) ui-monospace,monospace;white-space:nowrap}
+body.eve-theme .eve-signal-bars{height:24px;background:repeating-linear-gradient(90deg,transparent 0 5px,#d9aa4b 5px 8px,transparent 8px 11px);mask-image:linear-gradient(0deg,#000 18%,transparent 18% 28%,#000 28% 50%,transparent 50% 58%,#000 58%);opacity:.8}
+body.eve-theme .eve-signal-bars.upload{background-image:repeating-linear-gradient(90deg,transparent 0 5px,#bd8138 5px 8px,transparent 8px 11px);mask-image:linear-gradient(0deg,#000 16%,transparent 16% 35%,#000 35% 62%,transparent 62% 72%,#000 72%)}
+body.eve-theme .eve-network-counters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+body.eve-theme .eve-network-counters>div{display:grid;gap:6px;padding:9px;border:1px solid #494638;border-radius:6px;background:#1a1f20}
+body.eve-theme .eve-network-counters strong{color:#f1d88e;font:600 15px ui-monospace,monospace}
+body.eve-theme .eve-network-foot{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:9px;color:#aaa38f;font-size:8px;letter-spacing:.08em}
+body.eve-theme .eve-network-foot strong{color:#e2c477;font:600 10px ui-monospace,monospace}
+body.eve-theme #serversPage .table-card{margin-top:0;border-color:#66583b;border-radius:9px;background:#171c1f}
+body.eve-theme #serversPage .table-head{padding:14px 16px;background:linear-gradient(90deg,#232725,#191e20)}
+body.eve-theme #serversPage .table-head h2{color:#ead8a4;letter-spacing:.1em}
+body.eve-theme #serversPage .table-head input{border-color:#5d533c;background:#111619;color:#e7d9b6}
+body.eve-theme #serversPage th{font-size:9px;letter-spacing:.08em}
+body.eve-theme #serversPage td{padding:11px 7px;font-size:10px}
+body.eve-theme #serversPage .table-note{color:#a9a18d}
+body.eve-theme #serverRows .server-select{color:#e7d8b4}
+body.eve-theme #serverRows .fire-alert-row td{background:#38241d;border-color:#995129}
+@media(max-width:1100px){body.eve-theme #eveCockpit{grid-template-columns:1fr 1fr}body.eve-theme .eve-network-instrument{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;column-gap:12px}body.eve-theme .eve-network-instrument .eve-instrument-head,body.eve-theme .eve-network-instrument .eve-network-foot{grid-column:1/-1}body.eve-theme .eve-network-direction{margin-top:10px}}
+@media(max-width:700px){body.eve-theme #eveCockpit{grid-template-columns:1fr}body.eve-theme .eve-network-instrument{display:block;grid-column:auto}body.eve-theme .eve-instrument{padding:14px}body.eve-theme .eve-dial{flex-basis:132px;width:132px}}
+@media(prefers-reduced-motion:reduce){body.eve-theme .eve-dial{transition:none}}
