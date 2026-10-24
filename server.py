@@ -52,6 +52,7 @@ def init():
         CREATE TABLE IF NOT EXISTS announcements(id INTEGER PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1, created INTEGER NOT NULL, updated INTEGER NOT NULL, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL);
         CREATE TABLE IF NOT EXISTS client_subscriptions(user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, starts_on TEXT NOT NULL, expires_on TEXT NOT NULL, cycle_months INTEGER NOT NULL CHECK(cycle_months BETWEEN 1 AND 60), updated_at INTEGER NOT NULL, updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL);
         CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY, thread_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, recipient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, content TEXT NOT NULL, created INTEGER NOT NULL, read_at INTEGER);
+        CREATE TABLE IF NOT EXISTS forwarding_requests(id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE, created INTEGER NOT NULL);
         CREATE INDEX IF NOT EXISTS messages_thread_order ON messages(thread_user_id,id);
         CREATE INDEX IF NOT EXISTS messages_recipient_unread ON messages(recipient_id,read_at);
         CREATE INDEX IF NOT EXISTS announcements_published ON announcements(published,created DESC);
@@ -59,7 +60,7 @@ def init():
           stamp INTEGER NOT NULL,cpu REAL,memory REAL,tcp REAL,udp REAL,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));
         CREATE TABLE IF NOT EXISTS install_tickets(hash TEXT PRIMARY KEY,server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           expires INTEGER NOT NULL,used INTEGER NOT NULL DEFAULT 0);
-        PRAGMA user_version=10;
+        PRAGMA user_version=11;
         ''')
 
         if 'password_encrypted' not in [r[1] for r in db.execute('PRAGMA table_info(users)')]:
@@ -132,7 +133,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.3.1')
+    return jsonify(ok=True, version='0.3.2')
 
 @app.post('/api/login')
 def login():
@@ -270,6 +271,31 @@ def send_thread_message(uid):
         cur=db.execute('INSERT INTO messages(thread_user_id,sender_id,recipient_id,content,created) VALUES(?,?,?,?,?)',(uid,g.user['id'],recipient,content.strip(),now))
         row=db.execute('SELECT m.id,m.sender_id,m.recipient_id,m.content,m.created,m.read_at,u.username sender_name FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?',(cur.lastrowid,)).fetchone()
     return jsonify(ok=True,message=dict(row)),201
+
+@app.get('/api/forwarding-request')
+@auth()
+def get_forwarding_request():
+    if g.user['role']!='client':return error('仅客户账号可查看申请状态',403)
+    with connect() as db:
+        row=db.execute('SELECT id,created FROM forwarding_requests WHERE user_id=?',(g.user['id'],)).fetchone()
+    return jsonify(dict(row) if row else {'id':None,'created':None})
+
+@app.post('/api/forwarding-request')
+@auth()
+def submit_forwarding_request():
+    if g.user['role']!='client':return error('仅客户账号可提交申请',403)
+    now=int(time.time())
+    with connect() as db:
+        inserted=db.execute('INSERT OR IGNORE INTO forwarding_requests(user_id,created) VALUES(?,?)',(g.user['id'],now)).rowcount
+        row=db.execute('SELECT id,created FROM forwarding_requests WHERE user_id=?',(g.user['id'],)).fetchone()
+    return jsonify(ok=True,already_submitted=inserted==0,**dict(row)),(201 if inserted else 200)
+
+@app.get('/api/admin/forwarding-requests')
+@auth(True)
+def list_forwarding_requests():
+    with connect() as db:
+        rows=db.execute('SELECT r.id,r.created,u.id user_id,u.username FROM forwarding_requests r JOIN users u ON u.id=r.user_id ORDER BY r.created DESC,r.id DESC').fetchall()
+    return jsonify([dict(r) for r in rows])
 
 @app.get('/api/settings')
 @auth(True)
