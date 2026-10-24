@@ -385,3 +385,7 @@ body.fire-theme .renewal-admin-state.expired,body.fire-theme .renewal-status.ren
 body.fire-theme .renewal-soon-status{background:#ffddb0;color:#6e3200}
 body.fire-theme .announcement-status.published{background:#ffd8c2;color:#762009}
 body.fire-theme .danger{background:#ffd4ca!important;color:#7a1d11!important}
+
+/* Keep the message contact list inside its split pane; the global sidebar rule must not pin it over the main navigation. */
+aside.wechat-contacts{position:relative;inset:auto;width:auto;padding:0;backdrop-filter:none;border-right:1px solid #e8eaed}
+@media(max-width:760px){aside.wechat-contacts{position:relative;width:auto;padding:0}}
