@@ -574,3 +574,6 @@ body.eve-theme .heading p{color:#c1b698}
 @keyframes tactical-star-drift{from{background-position:0 0,0 0,0 0,0 0,0 0,0 0,0 0}to{background-position:-36px 22px,28px -30px,-44px 16px,32px 26px,-18px -24px,25px 34px,180px -90px}}
 @keyframes tactical-warp-pulse{0%,100%{transform:scale(.82) rotate(-3deg);opacity:.25}50%{transform:scale(1.08) rotate(2deg);opacity:.64}}
 @media(prefers-reduced-motion:reduce){body.eve-theme .heading::before,body.eve-theme .heading::after{animation:none}}
+
+body.eve-theme .heading .hyperspace-canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;pointer-events:none}
+body.eve-theme .heading::before,body.eve-theme .heading::after{display:none}
