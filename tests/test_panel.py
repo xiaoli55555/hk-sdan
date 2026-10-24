@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 class PanelTest(unittest.TestCase):
     def setUp(self):
         with server.connect() as db:
-            for table in ['sessions','commands','servers','audit','attempts','announcements','client_subscriptions','messages','users']:db.execute('DELETE FROM '+table)
+            for table in ['sessions','commands','servers','audit','attempts','announcements','client_subscriptions','messages','forwarding_requests','users']:db.execute('DELETE FROM '+table)
             db.execute("UPDATE settings SET value='/admin' WHERE key='admin_path'")
             for name,role in [('admin','admin'),('alice','client'),('bob','client')]:
                 db.execute('INSERT INTO users(username,password,role) VALUES(?,?,?)',(name,generate_password_hash('correct-password-123'),role))
@@ -89,6 +89,27 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.alice.post(f'/api/messages/threads/{alice_id}',json={'content':'x'*2001},headers={'X-CSRF-Token':self.tokens['alice']}).status_code,400)
         self.assertEqual(self.bob.post(f'/api/messages/threads/{alice_id}',json={'content':'跨客户'},headers={'X-CSRF-Token':self.tokens['bob']}).status_code,404)
         self.assertEqual(self.admin.post(f'/api/messages/threads/{bob_id}',json={'content':'管理员发起'},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,201)
+
+    def test_forwarding_request_permissions_idempotence_and_admin_listing(self):
+        alice_id=self.alice.get('/api/me').json['id']
+        admin_id=self.admin.get('/api/me').json['id']
+        self.assertEqual(self.admin.get('/api/forwarding-request').status_code,403)
+        self.assertEqual(self.alice.get('/api/admin/forwarding-requests').status_code,403)
+        self.assertEqual(self.alice.get('/api/forwarding-request').json,{'id':None,'created':None})
+        first=self.alice.post('/api/forwarding-request',json={},headers={'X-CSRF-Token':self.tokens['alice']})
+        self.assertEqual(first.status_code,201)
+        self.assertFalse(first.json['already_submitted'])
+        self.assertEqual(self.alice.get('/api/forwarding-request').json['id'],first.json['id'])
+        duplicate=self.alice.post('/api/forwarding-request',json={},headers={'X-CSRF-Token':self.tokens['alice']})
+        self.assertEqual(duplicate.status_code,200)
+        self.assertTrue(duplicate.json['already_submitted'])
+        self.assertEqual(duplicate.json['id'],first.json['id'])
+        requests=self.admin.get('/api/admin/forwarding-requests').json
+        self.assertEqual(len(requests),1)
+        self.assertEqual((requests[0]['user_id'],requests[0]['username']),(alice_id,'alice'))
+        self.assertIsInstance(requests[0]['created'],int)
+        self.assertEqual(self.admin.post('/api/forwarding-request',json={},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,403)
+        self.assertEqual(self.alice.post('/api/forwarding-request',json={}).status_code,403)
 
     def test_udp_unit_change_removes_only_old_udp_history(self):
         result=self.post('/api/servers',{'name':'udp-test'}).json
