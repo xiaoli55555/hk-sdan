@@ -1,6 +1,8 @@
 """Node Console: authenticated multi-tenant monitoring, SQLite, outbound-only agents."""
-import os, sqlite3, secrets, hashlib, time, json, re, math, sys, ipaddress
+import os, sqlite3, secrets, hashlib, time, json, re, math, sys, ipaddress, calendar
 from pathlib import Path
+from datetime import date, datetime, time as datetime_time, timedelta
+from zoneinfo import ZoneInfo
 from functools import wraps
 from network import record_network, traffic_summary
 from credential_store import load_cipher, InvalidToken
@@ -10,6 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 ROOT = Path(__file__).parent
 DATA = Path(os.environ.get('DATA_DIR', ROOT / 'data'))
 DATA.mkdir(parents=True, exist_ok=True)
+SHANGHAI = ZoneInfo('Asia/Shanghai')
 DB = DATA / 'panel.db'
 SECURE = os.environ.get('COOKIE_SECURE', '1') == '1'
 app = Flask(__name__, static_folder=None)
@@ -47,12 +50,13 @@ def init():
         CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
         INSERT OR IGNORE INTO settings(key,value) VALUES('admin_path','/admin');
         CREATE TABLE IF NOT EXISTS announcements(id INTEGER PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1, created INTEGER NOT NULL, updated INTEGER NOT NULL, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL);
+        CREATE TABLE IF NOT EXISTS client_subscriptions(user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, starts_on TEXT NOT NULL, expires_on TEXT NOT NULL, cycle_months INTEGER NOT NULL CHECK(cycle_months BETWEEN 1 AND 60), updated_at INTEGER NOT NULL, updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL);
         CREATE INDEX IF NOT EXISTS announcements_published ON announcements(published,created DESC);
         CREATE TABLE IF NOT EXISTS metric_points(server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           stamp INTEGER NOT NULL,cpu REAL,memory REAL,tcp REAL,udp REAL,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));
         CREATE TABLE IF NOT EXISTS install_tickets(hash TEXT PRIMARY KEY,server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           expires INTEGER NOT NULL,used INTEGER NOT NULL DEFAULT 0);
-        PRAGMA user_version=8;
+        PRAGMA user_version=9;
         ''')
 
         if 'password_encrypted' not in [r[1] for r in db.execute('PRAGMA table_info(users)')]:
@@ -125,7 +129,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.9')
+    return jsonify(ok=True, version='0.3.0')
 
 @app.post('/api/login')
 def login():
@@ -248,10 +252,85 @@ def password():
         db.execute('DELETE FROM sessions WHERE user_id=?',(g.user['id'],));audit(db,'修改登录密码')
     r=jsonify(ok=True);r.delete_cookie(g.cookie,secure=SECURE);return r
 
+def shanghai_today():
+    return datetime.now(SHANGHAI).date()
+
+def add_calendar_months(day, months):
+    total=day.year*12+(day.month-1)+months
+    year,month=divmod(total,12);month+=1
+    return date(year,month,min(day.day,calendar.monthrange(year,month)[1]))
+
+def date_midnight_epoch(day):
+    return int(datetime.combine(day,datetime_time.min,tzinfo=SHANGHAI).timestamp())
+
+def subscription_payload(row):
+    if not row:return {'starts_on':None,'expires_on':None,'cycle_months':None,'starts_at':None,'expires_at':None,'remaining_seconds':None,'server_now':int(time.time())}
+    start=date.fromisoformat(row['starts_on']);expiry=date.fromisoformat(row['expires_on'])
+    expires_at=int(datetime.combine(expiry+timedelta(days=1),datetime_time.min,tzinfo=SHANGHAI).timestamp())
+    starts_at=date_midnight_epoch(start);now=int(time.time())
+    return {'starts_on':row['starts_on'],'expires_on':row['expires_on'],'cycle_months':row['cycle_months'],'starts_at':starts_at,'expires_at':expires_at,'remaining_seconds':max(0,expires_at-now),'server_now':now}
+
+def client_subscription_row(db,uid):
+    return db.execute('SELECT starts_on,expires_on,cycle_months,updated_at FROM client_subscriptions WHERE user_id=?',(uid,)).fetchone()
+
+@app.get('/api/subscription')
+@auth()
+def own_subscription():
+    if g.user['role']!='client':return error('仅客户账号有个人服务期限',403)
+    with connect() as db:return jsonify(subscription_payload(client_subscription_row(db,g.user['id'])))
+
+@app.get('/api/users/<int:uid>/subscription')
+@auth(True)
+def get_client_subscription(uid):
+    with connect() as db:
+        if not db.execute("SELECT 1 FROM users WHERE id=? AND role='client'",(uid,)).fetchone():return error('客户不存在',404)
+        row=client_subscription_row(db,uid)
+    return jsonify(subscription_payload(row))
+
+@app.patch('/api/users/<int:uid>/subscription')
+@auth(True)
+def set_client_subscription(uid):
+    data=body();expires_on=data.get('expires_on');months=data.get('cycle_months')
+    if not isinstance(expires_on,str):return error('请选择有效的到期日期')
+    try:expiry=date.fromisoformat(expires_on)
+    except ValueError:return error('到期日期格式无效')
+    if expiry.isoformat()!=expires_on:return error('到期日期格式无效')
+    if type(months) is not int or not 1<=months<=60:return error('续费周期需为 1～60 个自然月')
+    now=int(time.time());today=shanghai_today();starts=(today if expiry>=today else expiry).isoformat()
+    with connect() as db:
+        if not db.execute("SELECT 1 FROM users WHERE id=? AND role='client'",(uid,)).fetchone():return error('客户不存在',404)
+        db.execute('INSERT INTO client_subscriptions(user_id,starts_on,expires_on,cycle_months,updated_at,updated_by) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET starts_on=excluded.starts_on,expires_on=excluded.expires_on,cycle_months=excluded.cycle_months,updated_at=excluded.updated_at,updated_by=excluded.updated_by',(uid,starts,expiry.isoformat(),months,now,g.user['id']))
+        audit(db,f'设置客户 #{uid} 服务到期日 {expiry.isoformat()}，周期 {months} 个自然月')
+        row=client_subscription_row(db,uid)
+    return jsonify(ok=True,**subscription_payload(row))
+
+@app.post('/api/users/<int:uid>/subscription/renew')
+@auth(True)
+def renew_client_subscription(uid):
+    now=int(time.time());today=shanghai_today()
+    with connect() as db:
+        row=client_subscription_row(db,uid)
+        if not db.execute("SELECT 1 FROM users WHERE id=? AND role='client'",(uid,)).fetchone():return error('客户不存在',404)
+        if not row:return error('请先为客户设置到期日期和续费周期')
+        current_expiry=date.fromisoformat(row['expires_on']);base=current_expiry if current_expiry>=today else today
+        expiry=add_calendar_months(base,row['cycle_months'])
+        db.execute('UPDATE client_subscriptions SET starts_on=?,expires_on=?,updated_at=?,updated_by=? WHERE user_id=?',(base.isoformat(),expiry.isoformat(),now,g.user['id'],uid))
+        audit(db,f'为客户 #{uid} 按 {row["cycle_months"]} 个自然月续期至 {expiry.isoformat()}')
+        updated=client_subscription_row(db,uid)
+    return jsonify(ok=True,**subscription_payload(updated))
+
+@app.delete('/api/users/<int:uid>/subscription')
+@auth(True)
+def clear_client_subscription(uid):
+    with connect() as db:
+        if not db.execute("SELECT 1 FROM users WHERE id=? AND role='client'",(uid,)).fetchone():return error('客户不存在',404)
+        db.execute('DELETE FROM client_subscriptions WHERE user_id=?',(uid,));audit(db,f'清除客户 #{uid} 服务期限')
+    return jsonify(ok=True)
+
 @app.get('/api/users')
 @auth(True)
 def users():
-    with connect() as db: return jsonify([dict(x) for x in db.execute('SELECT id,username,role FROM users ORDER BY id')])
+    with connect() as db: return jsonify([dict(x) for x in db.execute('SELECT u.id,u.username,u.role,s.expires_on,s.cycle_months FROM users u LEFT JOIN client_subscriptions s ON s.user_id=u.id ORDER BY u.id')])
 
 @app.post('/api/users')
 @auth(True)

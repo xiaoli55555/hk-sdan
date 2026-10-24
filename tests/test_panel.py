@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 class PanelTest(unittest.TestCase):
     def setUp(self):
         with server.connect() as db:
-            for table in ['sessions','commands','servers','audit','attempts','announcements','users']:db.execute('DELETE FROM '+table)
+            for table in ['sessions','commands','servers','audit','attempts','announcements','client_subscriptions','users']:db.execute('DELETE FROM '+table)
             db.execute("UPDATE settings SET value='/admin' WHERE key='admin_path'")
             for name,role in [('admin','admin'),('alice','client'),('bob','client')]:
                 db.execute('INSERT INTO users(username,password,role) VALUES(?,?,?)',(name,generate_password_hash('correct-password-123'),role))
@@ -18,6 +18,33 @@ class PanelTest(unittest.TestCase):
             self.assertEqual(client.post('/api/login',json={'username':name,'password':'correct-password-123'}).status_code,200)
             self.tokens[name]=client.get('/api/me').json['csrf']
     def post(self,path,data=None):return self.admin.post(path,json=data or {},headers={'X-CSRF-Token':self.tokens['admin']})
+    def test_natural_month_subscription_settings_and_countdown(self):
+        from datetime import date, datetime, timezone
+        from unittest.mock import patch
+        self.assertEqual(server.add_calendar_months(date(2024,1,31),1),date(2024,2,29))
+        self.assertEqual(server.add_calendar_months(date(2025,1,31),1),date(2025,2,28))
+        self.assertEqual(server.add_calendar_months(date(2024,1,31),12),date(2025,1,31))
+        uid=self.alice.get('/api/me').json['id']
+        self.assertIsNone(self.alice.get('/api/subscription').json['expires_on'])
+        self.assertEqual(self.alice.get(f'/api/users/{uid}/subscription').status_code,403)
+        with patch('server.shanghai_today',return_value=date(2024,1,31)):
+            saved=self.admin.patch(f'/api/users/{uid}/subscription',json={'expires_on':'2024-01-31','cycle_months':1},headers={'X-CSRF-Token':self.tokens['admin']})
+            self.assertEqual(saved.status_code,200)
+            self.assertEqual(saved.json['starts_on'],'2024-01-31')
+            self.assertEqual(self.alice.get('/api/subscription').json['expires_on'],'2024-01-31')
+            renewed=self.admin.post(f'/api/users/{uid}/subscription/renew',json={},headers={'X-CSRF-Token':self.tokens['admin']})
+            self.assertEqual(renewed.status_code,200)
+            self.assertEqual(renewed.json['expires_on'],'2024-02-29')
+        client_view=self.alice.get('/api/subscription').json
+        expected=int(datetime(2024,3,1,0,0,tzinfo=server.SHANGHAI).timestamp())
+        self.assertEqual(client_view['expires_at'],expected)
+        self.assertEqual(client_view['cycle_months'],1)
+        self.assertEqual(self.admin.patch(f'/api/users/{uid}/subscription',json={'expires_on':'2024-02-30','cycle_months':1},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,400)
+        self.assertEqual(self.admin.patch(f'/api/users/{uid}/subscription',json={'expires_on':'2024-03-01','cycle_months':0},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,400)
+        self.assertEqual(self.admin.delete(f'/api/users/{uid}/subscription',headers={'X-CSRF-Token':self.tokens['admin']}).status_code,200)
+        self.assertIsNone(self.alice.get('/api/subscription').json['expires_on'])
+        self.assertEqual(self.alice.get('/api/users').status_code,403)
+
     def test_announcements_admin_crud_and_client_visibility(self):
         self.assertEqual(self.alice.get('/api/admin/announcements').status_code,403)
         self.assertEqual(self.alice.post('/api/announcements',json={'title':'not allowed','content':'x'},headers={'X-CSRF-Token':self.tokens['alice']}).status_code,403)

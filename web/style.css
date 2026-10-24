@@ -172,3 +172,50 @@ body.fire-theme #announcementsPage textarea:focus-visible{outline-color:#ed8b62}
 @media(prefers-reduced-motion:reduce){.announcement-track{animation:none;transform:none}.announcement-ticker:hover .announcement-track{animation:none}}
 @media(prefers-reduced-motion:reduce){.announcement-track span[aria-hidden="true"]{display:none}}
 body.fire-theme .announcement-ticker{background:linear-gradient(105deg,#b93222,#df4927 50%,#ef6d34);box-shadow:0 8px 25px #d949283d}
+
+/* Natural-month service term card (option B) and admin management page. */
+.renewal-client-view{max-width:900px;margin:24px auto}
+.renewal-card{position:relative;overflow:hidden;padding:28px 30px;border:1px solid #e8eaf0;border-radius:24px;background:linear-gradient(140deg,#fff 0%,#fffdfa 55%,#fff3ea 100%);box-shadow:0 18px 48px #3030500a}
+.renewal-card::after{content:"";position:absolute;top:-100px;right:-80px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,#ffe4d2a6,transparent 69%);pointer-events:none}
+.renewal-card-heading{position:relative;z-index:1;display:flex;align-items:center;gap:16px}
+.renewal-icon{display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border-radius:18px;background:linear-gradient(145deg,#ffeadc,#fff7f0);color:#e95a33;font-size:25px;box-shadow:inset 0 0 0 1px #f6d8c5}
+.renewal-heading-copy{min-width:0;flex:1}
+.renewal-heading-copy h2{margin:4px 0 2px;color:#303b4b;font-size:21px}
+.renewal-heading-copy p{margin:0;color:#8791a0}
+.renewal-status{flex:0 0 auto;padding:7px 11px;border-radius:999px;background:#eaf6ef;color:#37885a;font-size:11px;font-weight:700}
+.renewal-active-status{background:#eaf6ef;color:#37885a}
+.renewal-soon-status{background:#fff0df;color:#bc641e}
+.renewal-expired-status,.renewal-unset-status{background:#fff0ed;color:#c1493d}
+.renewal-card-details{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:28px;padding:22px 0;border-top:1px solid #f0e9e3;border-bottom:1px solid #f0e9e3}
+.renewal-detail,.renewal-countdown{display:grid;align-content:center;gap:9px;min-width:0}
+.renewal-countdown{padding-left:24px;border-left:1px solid #eee4dc}
+.renewal-detail>span,.renewal-countdown>span{color:#858e9b;font-size:12px}
+.renewal-detail>strong{color:#27384e;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.renewal-detail>small,.renewal-countdown>small{color:#98a0aa;font-size:11px}
+.renewal-countdown>strong{color:#e45630;font-size:30px;line-height:1.2;font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:-.7px}
+.renewal-progress-area{position:relative;z-index:1;margin-top:20px}
+.renewal-progress-area>div:first-child{display:flex;justify-content:space-between;gap:10px;margin-bottom:9px;color:#8a929e;font-size:11px}
+.renewal-progress-area>div:first-child strong{color:#667286;font-weight:650}
+.renewal-progress{height:8px;border-radius:99px;background:#edf0f4;overflow:hidden}
+.renewal-progress>span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ffc078,#f27a42);transition:width .8s ease}
+.renewal-help{position:relative;z-index:1;margin:17px 0 0;color:#929aa5;font-size:11px}
+.renewal-soon{border-color:#ffd1a8;box-shadow:0 14px 40px #f29c551c}
+.renewal-soon .renewal-countdown>strong{color:#d86b26}
+.renewal-expired{border-color:#f2c6be;background:linear-gradient(140deg,#fff,#fff8f6)}
+.renewal-expired .renewal-countdown>strong{color:#c84439}
+.renewal-expired .renewal-progress>span{background:#db5c50}
+.renewal-unset .renewal-countdown>strong{color:#9ba2ad}
+.renewal-admin-intro{margin-bottom:20px}
+.renewal-admin-intro h2{margin-bottom:8px}
+.renewal-admin-intro p{margin:0}
+.renewal-admin-state{display:inline-block;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:650;white-space:nowrap}
+.renewal-admin-state.active{background:#eaf6ef;color:#37885a}
+.renewal-admin-state.expired{background:#fff0ed;color:#c1493d}
+.renewal-admin-state.unset{background:#eef1f5;color:#7f8a99}
+body.fire-theme .renewal-card{border-color:#f0ddce;background:linear-gradient(140deg,#fff,#fffaf6 55%,#fff0e5 100%);box-shadow:0 18px 48px #a04b2510}
+body.fire-theme .renewal-card::after{background:radial-gradient(circle,#ffd7b7a6,transparent 69%)}
+body.fire-theme .renewal-icon{background:linear-gradient(145deg,#ffe2cf,#fff3e9);color:#df4e2b}
+body.fire-theme .renewal-progress>span{background:linear-gradient(90deg,#ffc16c,#ed5a31)}
+body.fire-theme .renewal-admin-intro{border-color:#f0ddce}
+@media(max-width:700px){.renewal-client-view{margin:16px 0}.renewal-card{padding:20px 17px;border-radius:19px}.renewal-card-heading{gap:11px;align-items:flex-start}.renewal-icon{flex-basis:43px;width:43px;height:43px;border-radius:14px;font-size:21px}.renewal-heading-copy h2{font-size:18px}.renewal-heading-copy p{font-size:11px}.renewal-status{padding:6px 8px;font-size:10px}.renewal-card-details{grid-template-columns:1fr;gap:18px;margin-top:20px;padding:17px 0}.renewal-countdown{padding:16px 0 0;border-left:0;border-top:1px solid #eee4dc}.renewal-detail>strong{font-size:20px}.renewal-countdown>strong{font-size:25px}}
+@media(prefers-reduced-motion:reduce){.renewal-progress>span{transition:none}}
