@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 class PanelTest(unittest.TestCase):
     def setUp(self):
         with server.connect() as db:
-            for table in ['sessions','commands','servers','audit','attempts','announcements','client_subscriptions','users']:db.execute('DELETE FROM '+table)
+            for table in ['sessions','commands','servers','audit','attempts','announcements','client_subscriptions','messages','users']:db.execute('DELETE FROM '+table)
             db.execute("UPDATE settings SET value='/admin' WHERE key='admin_path'")
             for name,role in [('admin','admin'),('alice','client'),('bob','client')]:
                 db.execute('INSERT INTO users(username,password,role) VALUES(?,?,?)',(name,generate_password_hash('correct-password-123'),role))
@@ -65,6 +65,30 @@ class PanelTest(unittest.TestCase):
         self.assertEqual(self.admin.delete(f'/api/announcements/{aid}',headers={'X-CSRF-Token':self.tokens['admin']}).status_code,200)
         self.assertEqual(self.alice.get('/api/announcements').json,[])
         self.assertEqual(self.admin.get('/api/admin/announcements').json,[])
+
+
+    def test_secure_customer_admin_message_threads_and_unread(self):
+        alice_id=self.alice.get('/api/me').json['id'];bob_id=self.bob.get('/api/me').json['id']
+        self.assertEqual(self.bob.get(f'/api/messages/threads/{alice_id}').status_code,404)
+        self.assertEqual(self.alice.get('/api/messages/threads').status_code,403)
+        self.assertEqual(self.alice.get('/api/messages/unread').json['unread'],0)
+        sent=self.alice.post(f'/api/messages/threads/{alice_id}',json={'content':'VPS 无法连接，请协助处理。'},headers={'X-CSRF-Token':self.tokens['alice']})
+        self.assertEqual(sent.status_code,201)
+        self.assertEqual(self.admin.get('/api/messages/unread').json['unread'],1)
+        threads=self.admin.get('/api/messages/threads').json
+        self.assertEqual(next(x for x in threads if x['user_id']==alice_id)['unread'],1)
+        conversation=self.admin.get(f'/api/messages/threads/{alice_id}').json
+        self.assertEqual(conversation['messages'][0]['content'],'VPS 无法连接，请协助处理。')
+        self.assertEqual(self.admin.get('/api/messages/unread').json['unread'],0)
+        reply=self.admin.post(f'/api/messages/threads/{alice_id}',json={'content':'已收到，我正在检查。'},headers={'X-CSRF-Token':self.tokens['admin']})
+        self.assertEqual(reply.status_code,201)
+        self.assertEqual(self.alice.get('/api/messages/unread').json['unread'],1)
+        self.assertEqual(self.alice.get(f'/api/messages/threads/{alice_id}').json['messages'][-1]['sender_name'],'admin')
+        self.assertEqual(self.alice.get('/api/messages/unread').json['unread'],0)
+        self.assertEqual(self.alice.post(f'/api/messages/threads/{alice_id}',json={'content':' '},headers={'X-CSRF-Token':self.tokens['alice']}).status_code,400)
+        self.assertEqual(self.alice.post(f'/api/messages/threads/{alice_id}',json={'content':'x'*2001},headers={'X-CSRF-Token':self.tokens['alice']}).status_code,400)
+        self.assertEqual(self.bob.post(f'/api/messages/threads/{alice_id}',json={'content':'跨客户'},headers={'X-CSRF-Token':self.tokens['bob']}).status_code,404)
+        self.assertEqual(self.admin.post(f'/api/messages/threads/{bob_id}',json={'content':'管理员发起'},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,201)
 
     def test_udp_unit_change_removes_only_old_udp_history(self):
         result=self.post('/api/servers',{'name':'udp-test'}).json
