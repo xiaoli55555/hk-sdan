@@ -131,3 +131,44 @@ body.fire-theme #serverRows .fire-alert-row .fire-embers::after{content:"";posit
 @keyframes sparksDrift{0%{transform:translateY(3px);opacity:.4}50%{transform:translateY(-3px);opacity:.85}100%{transform:translateY(-7px);opacity:.25}}
 @keyframes noticeGlow{from{box-shadow:0 3px 10px #f0773810}to{box-shadow:0 5px 18px #f0773835}}
 @media(prefers-reduced-motion:reduce){#fireNotice{animation:none}body.fire-theme #serverRows .fire-alert-row .fire-embers::before,body.fire-theme #serverRows .fire-alert-row .fire-embers::after{animation:none}}
+
+/* High-visibility announcement ticker and admin publishing tools. */
+.announcement-ticker{display:flex;align-items:center;gap:14px;min-height:50px;margin:14px 0 18px;padding:0 16px;border:1px solid #ff9362;border-radius:14px;background:linear-gradient(105deg,#d94027,#ee5b2e 48%,#fa873c);color:#fff;box-shadow:0 8px 22px #e65b3033;overflow:hidden}
+.announcement-label{flex:0 0 auto;padding:7px 11px;border:1px solid #ffffff54;border-radius:999px;background:#ffffff20;color:#fff;font-size:12px;letter-spacing:.04em;white-space:nowrap}
+.announcement-viewport{min-width:0;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 2%,#000 98%,transparent)}
+.announcement-track{display:flex;width:max-content;align-items:center;animation:announcementMarquee 34s linear infinite}
+.announcement-track span{display:block;flex:0 0 auto;padding-right:72px;color:#fff;font-size:13px;font-weight:650;letter-spacing:.015em;white-space:nowrap}
+.announcement-ticker:hover .announcement-track{animation-play-state:paused}
+@keyframes announcementMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+#announcementsPage .announcement-admin-card{max-width:920px}
+#announcementsPage .announcement-admin-heading p{margin:-9px 0 12px}
+#announcementsPage textarea{display:block;width:100%;margin-top:7px;padding:12px 14px;border:1px solid #e6e7ee;border-radius:10px;background:#fafbfe;color:#41414a;font:inherit;font-size:13px;line-height:1.7;resize:vertical}
+#announcementsPage textarea:focus-visible{outline:2px solid #7cb4f8;outline-offset:2px}
+#announcementsPage .announcement-publish-toggle{display:flex;align-items:center;gap:9px;width:max-content;color:#4f6077}
+#announcementsPage .announcement-publish-toggle input{width:16px;height:16px;margin:0;accent-color:#ed5b35}
+.announcement-form-actions{display:flex;gap:9px;align-items:center}
+.announcement-list-card{margin-top:20px}
+.announcement-list-card .table-head>span{color:#9a9aa5;font-size:11px}
+.announcement-admin-list{padding:0 16px 16px}
+.announcement-admin-item{padding:16px;margin:0 0 12px;border:1px solid #e8ebf1;border-radius:14px;background:#fff}
+.announcement-admin-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.announcement-admin-item-head>div{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.announcement-admin-item-head strong{color:#34465b;font-size:14px}
+.announcement-admin-item-head>small{color:#9a9aa5;font-size:10px;white-space:nowrap}
+.announcement-admin-item>p{margin:10px 0 14px;color:#657388;white-space:pre-wrap;overflow-wrap:anywhere}
+.announcement-status{padding:4px 8px;border-radius:999px;font-size:10px;font-weight:650}
+.announcement-status.published{background:#fff0e8;color:#d64a2b}
+.announcement-status.draft{background:#eef1f5;color:#788394}
+.announcement-admin-actions{display:flex;gap:7px;flex-wrap:wrap}
+.announcement-admin-actions button{padding:7px 11px;font-size:11px}
+.announcement-admin-actions .danger{background:#fff0ee;color:#c7463b}
+.announcement-empty{padding:12px;color:#959ba5;text-align:center}
+body.fire-theme .announcement-admin-item{border-color:#f3ddd0;background:#fffaf5}
+body.fire-theme .announcement-admin-item-head strong{color:#75432e}
+body.fire-theme .announcement-admin-actions button:not(.danger){background:#f8e8dc;color:#8a5336}
+body.fire-theme #announcementsPage textarea{border-color:#efd9c9;background:#fffdfa}
+body.fire-theme #announcementsPage textarea:focus-visible{outline-color:#ed8b62}
+@media(max-width:760px){.announcement-ticker{gap:8px;min-height:44px;padding:0 9px;border-radius:12px}.announcement-label{padding:6px 8px;font-size:10px}.announcement-track span{font-size:11px;padding-right:45px}.announcement-admin-item-head{flex-direction:column;gap:5px}.announcement-admin-list{padding:0 10px 12px}}
+@media(prefers-reduced-motion:reduce){.announcement-track{animation:none;transform:none}.announcement-ticker:hover .announcement-track{animation:none}}
+@media(prefers-reduced-motion:reduce){.announcement-track span[aria-hidden="true"]{display:none}}
+body.fire-theme .announcement-ticker{background:linear-gradient(105deg,#b93222,#df4927 50%,#ef6d34);box-shadow:0 8px 25px #d949283d}

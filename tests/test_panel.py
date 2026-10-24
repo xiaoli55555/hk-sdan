@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 class PanelTest(unittest.TestCase):
     def setUp(self):
         with server.connect() as db:
-            for table in ['sessions','commands','servers','audit','attempts','users']:db.execute('DELETE FROM '+table)
+            for table in ['sessions','commands','servers','audit','attempts','announcements','users']:db.execute('DELETE FROM '+table)
             db.execute("UPDATE settings SET value='/admin' WHERE key='admin_path'")
             for name,role in [('admin','admin'),('alice','client'),('bob','client')]:
                 db.execute('INSERT INTO users(username,password,role) VALUES(?,?,?)',(name,generate_password_hash('correct-password-123'),role))
@@ -18,6 +18,27 @@ class PanelTest(unittest.TestCase):
             self.assertEqual(client.post('/api/login',json={'username':name,'password':'correct-password-123'}).status_code,200)
             self.tokens[name]=client.get('/api/me').json['csrf']
     def post(self,path,data=None):return self.admin.post(path,json=data or {},headers={'X-CSRF-Token':self.tokens['admin']})
+    def test_announcements_admin_crud_and_client_visibility(self):
+        self.assertEqual(self.alice.get('/api/admin/announcements').status_code,403)
+        self.assertEqual(self.alice.post('/api/announcements',json={'title':'not allowed','content':'x'},headers={'X-CSRF-Token':self.tokens['alice']}).status_code,403)
+        self.assertEqual(self.alice.get('/api/announcements').json,[])
+        created=self.post('/api/announcements',{'title':'维护通知','content':'今晚 23:00 进行网络维护','published':False})
+        self.assertEqual(created.status_code,201)
+        aid=created.json['id']
+        self.assertEqual(self.alice.get('/api/announcements').json,[])
+        managed=self.admin.get('/api/admin/announcements').json
+        self.assertEqual(managed[0]['published'],0)
+        self.assertEqual(self.admin.patch(f'/api/announcements/{aid}',json={'published':True},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,200)
+        visible=self.alice.get('/api/announcements').json
+        self.assertEqual([(x['title'],x['content']) for x in visible],[('维护通知','今晚 23:00 进行网络维护')])
+        self.assertEqual(self.admin.patch(f'/api/announcements/{aid}',json={'title':'x'*81},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,400)
+        self.assertEqual(self.admin.patch(f'/api/announcements/{aid}',json={'published':1},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,400)
+        self.assertEqual(self.admin.patch(f'/api/announcements/{aid}',json={'published':False},headers={'X-CSRF-Token':self.tokens['admin']}).status_code,200)
+        self.assertEqual(self.alice.get('/api/announcements').json,[])
+        self.assertEqual(self.admin.delete(f'/api/announcements/{aid}',headers={'X-CSRF-Token':self.tokens['admin']}).status_code,200)
+        self.assertEqual(self.alice.get('/api/announcements').json,[])
+        self.assertEqual(self.admin.get('/api/admin/announcements').json,[])
+
     def test_udp_unit_change_removes_only_old_udp_history(self):
         result=self.post('/api/servers',{'name':'udp-test'}).json
         sid=result['id'];headers={'Authorization':'Bearer '+result['token']}

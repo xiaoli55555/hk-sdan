@@ -46,11 +46,13 @@ def init():
         CREATE INDEX IF NOT EXISTS commands_pending ON commands(server_id,status,created);
         CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
         INSERT OR IGNORE INTO settings(key,value) VALUES('admin_path','/admin');
+        CREATE TABLE IF NOT EXISTS announcements(id INTEGER PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1, created INTEGER NOT NULL, updated INTEGER NOT NULL, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL);
+        CREATE INDEX IF NOT EXISTS announcements_published ON announcements(published,created DESC);
         CREATE TABLE IF NOT EXISTS metric_points(server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           stamp INTEGER NOT NULL,cpu REAL,memory REAL,tcp REAL,udp REAL,rx_bps REAL,tx_bps REAL,PRIMARY KEY(server_id,stamp));
         CREATE TABLE IF NOT EXISTS install_tickets(hash TEXT PRIMARY KEY,server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
           expires INTEGER NOT NULL,used INTEGER NOT NULL DEFAULT 0);
-        PRAGMA user_version=7;
+        PRAGMA user_version=8;
         ''')
 
         if 'password_encrypted' not in [r[1] for r in db.execute('PRAGMA table_info(users)')]:
@@ -123,7 +125,7 @@ def headers(r):
 @app.get('/health')
 def health():
     with connect() as db: db.execute('SELECT 1').fetchone()
-    return jsonify(ok=True, version='0.2.8')
+    return jsonify(ok=True, version='0.2.9')
 
 @app.post('/api/login')
 def login():
@@ -148,6 +150,62 @@ def get_entry():
     entry,role,cookie=entry_context()
     if entry is None:return error('入口不存在',404)
     return jsonify(kind=role)
+
+@app.get('/api/announcements')
+@auth()
+def get_announcements():
+    with connect() as db:
+        rows=db.execute('SELECT id,title,content,created,updated FROM announcements WHERE published=1 ORDER BY created DESC,id DESC LIMIT 20').fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.get('/api/admin/announcements')
+@auth(True)
+def manage_announcements():
+    with connect() as db:
+        rows=db.execute('SELECT id,title,content,published,created,updated,user_id FROM announcements ORDER BY created DESC,id DESC LIMIT 100').fetchall()
+    return jsonify([dict(r) for r in rows])
+
+def validate_announcement(data, current=None):
+    title=data.get('title',current['title'] if current else '')
+    content=data.get('content',current['content'] if current else '')
+    published=data.get('published',bool(current['published']) if current else True)
+    if not isinstance(title,str) or not title.strip() or len(title.strip())>80:return None,error('公告标题不能为空，且不能超过 80 个字符')
+    if not isinstance(content,str) or not content.strip() or len(content.strip())>2000:return None,error('公告内容不能为空，且不能超过 2000 个字符')
+    if type(published) is not bool:return None,error('发布状态无效')
+    return (title.strip(),content.strip(),int(published)),None
+
+@app.post('/api/announcements')
+@auth(True)
+def create_announcement():
+    fields,problem=validate_announcement(body())
+    if problem:return problem
+    title,content,published=fields;now=int(time.time())
+    with connect() as db:
+        cur=db.execute('INSERT INTO announcements(title,content,published,created,updated,user_id) VALUES(?,?,?,?,?,?)',(title,content,published,now,now,g.user['id']))
+        aid=cur.lastrowid;audit(db,('发布' if published else '保存')+'公告 #'+str(aid)+' '+title[:80])
+    return jsonify(ok=True,id=aid),201
+
+@app.patch('/api/announcements/<int:aid>')
+@auth(True)
+def edit_announcement(aid):
+    with connect() as db:
+        current=db.execute('SELECT * FROM announcements WHERE id=?',(aid,)).fetchone()
+        if not current:return error('公告不存在',404)
+        fields,problem=validate_announcement(body(),current)
+        if problem:return problem
+        title,content,published=fields
+        db.execute('UPDATE announcements SET title=?,content=?,published=?,updated=? WHERE id=?',(title,content,published,int(time.time()),aid))
+        audit(db,('发布' if published else '撤回')+'公告 #'+str(aid)+' '+title[:80])
+    return jsonify(ok=True,id=aid)
+
+@app.delete('/api/announcements/<int:aid>')
+@auth(True)
+def delete_announcement(aid):
+    with connect() as db:
+        row=db.execute('SELECT title FROM announcements WHERE id=?',(aid,)).fetchone()
+        if not row:return error('公告不存在',404)
+        db.execute('DELETE FROM announcements WHERE id=?',(aid,));audit(db,'删除公告 #'+str(aid)+' '+row['title'][:80])
+    return jsonify(ok=True)
 
 @app.get('/api/settings')
 @auth(True)
