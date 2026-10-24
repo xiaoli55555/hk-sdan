@@ -96,3 +96,29 @@ body.fire-theme #serverRows .fire-alert-row .server-select,body.fire-theme #serv
 @media(prefers-reduced-motion:reduce){body.fire-theme,body.fire-theme #serverRows .fire-alert-row .fire-embers,#serverRows .mini-gauge-ring.burning-gauge{animation:none;transition:none}}
 
 .fire-notice{display:inline-flex;align-items:center;margin:8px 0 2px;padding:7px 11px;border:1px solid #ffd1ae;border-radius:999px;background:#fff3e9;color:#d84c27;font-size:11px;font-weight:650;box-shadow:0 4px 14px #f0773814}
+
+/* Open dialogs follow the selected dashboard theme, including charts and forms. */
+body.fire-theme dialog#modal{color:#342820;background:linear-gradient(145deg,#fffdfa,#fff7f0);border-color:#ffdfca;box-shadow:0 30px 100px #7c321e30,0 0 0 1px #fff8f1 inset;animation:modalRise 220ms cubic-bezier(.2,.75,.25,1)}
+body.fire-theme dialog#modal::backdrop{background:#46271935;backdrop-filter:blur(9px)}
+body.fire-theme dialog#modal h2{color:#392820}
+body.fire-theme dialog#modal p,body.fire-theme dialog#modal label{color:#806e63}
+body.fire-theme dialog#modal input,body.fire-theme dialog#modal select{background:#fffdfa;border-color:#efd9c9;color:#3e3028}
+body.fire-theme dialog#modal input:focus,body.fire-theme dialog#modal select:focus{border-color:#f08a5c;box-shadow:0 0 0 3px #f08a5c25;outline:0}
+body.fire-theme dialog#modal pre{background:#fff0e4;border:1px solid #f7dfcf;color:#593d2f}
+body.fire-theme dialog#modal .token{color:#a94625}
+body.fire-theme dialog#modal .close{background:#fff0e5;color:#9b5437}
+body.fire-theme dialog#modal .close:hover{background:#ffe3d1;color:#d74c2b}
+body.fire-theme dialog#modal .metric-tabs{background:#f9e9dc}
+body.fire-theme dialog#modal .metric-tabs button[aria-selected="true"]{background:#fffdfa;color:#d84e2b;box-shadow:0 2px 8px #823a1b12}
+body.fire-theme dialog#modal .metric-tabs button:hover{background:#fff6ee;color:#d84e2b}
+body.fire-theme dialog#modal .monitor-stat{background:#fffdfa;border-color:#f0dfd2;box-shadow:0 6px 20px #8d4d2b0c}
+body.fire-theme dialog#modal .monitor-stat b{color:#5c4639}
+body.fire-theme dialog#modal .monitor-empty{background:#fbefe5;color:#9f8170}
+body.fire-theme dialog#modal .monitor-tooltip{background:#fffaf4ed;border-color:#f0ddce;box-shadow:0 6px 25px #75402118}
+body.fire-theme dialog#modal .ip-current,body.fire-theme dialog#modal .network-grid>div{background:#fff0e5;border:1px solid #f6e2d3}
+body.fire-theme dialog#modal .ip-history-panel,body.fire-theme dialog#modal .bandwidth-panel{border-color:#f0ddcf}
+body.fire-theme dialog#modal .ip-history-item{border-color:#f0e3d9;color:#725e50}
+body.fire-theme dialog#modal .detail-actions button:not(.primary):not(.danger),body.fire-theme dialog#modal .metric-controls button:not(.primary){background:#f9e9dc;color:#865b44}
+body.fire-theme dialog#modal .detail-actions button:not(.primary):not(.danger):hover,body.fire-theme dialog#modal .metric-controls button:not(.primary):hover{background:#f5dcc9;color:#c44929}
+@keyframes modalRise{from{opacity:.75;transform:translateY(8px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){body.fire-theme dialog#modal{animation:none}}
