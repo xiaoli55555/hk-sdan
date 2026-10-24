@@ -90,7 +90,7 @@ body.fire-theme #serverRows .fire-alert-row td{background:#fff7ef}
 #serverRows .fire-embers{position:absolute;z-index:0;right:-900%;top:0;width:900%;height:100%;pointer-events:none;opacity:0}
 body.fire-theme #serverRows .fire-alert-row .fire-embers{opacity:1;background-image:radial-gradient(ellipse 3px 7px at 15% 82%,#ff9346a6 15%,transparent 72%),radial-gradient(ellipse 2px 5px at 38% 73%,#ff6c35ad 15%,transparent 74%),radial-gradient(ellipse 3px 6px at 67% 82%,#ffaf54a0 15%,transparent 72%),radial-gradient(ellipse 2px 5px at 88% 70%,#ec4e31a8 15%,transparent 75%);animation:embersRise 2.6s ease-in-out infinite alternate}
 body.fire-theme #serverRows .fire-alert-row .server-select,body.fire-theme #serverRows .fire-alert-row .muted{position:relative;z-index:1}
-@keyframes flamePulse{from{filter:drop-shadow(0 0 3px #ff9b5740)}to{filter:drop-shadow(0 0 10px #ff712c87)}}
+@keyframes flamePulse{0%,100%{filter:drop-shadow(0 0 3px #ff9b5740);transform:scale(.98)}45%{filter:drop-shadow(0 0 11px #ff712c87);transform:scale(1.035)}72%{filter:drop-shadow(0 0 6px #ff9b576b);transform:scale(1.01)}}
 @keyframes embersRise{from{transform:translateY(2px);opacity:.55}to{transform:translateY(-3px);opacity:1}}
 @media(max-width:760px){.header-tools{gap:6px;flex-wrap:wrap;justify-content:flex-end}.theme-switch button{padding:6px 9px;font-size:11px}}
 @media(prefers-reduced-motion:reduce){body.fire-theme,body.fire-theme #serverRows .fire-alert-row .fire-embers,#serverRows .mini-gauge-ring.burning-gauge{animation:none;transition:none}}
@@ -122,3 +122,12 @@ body.fire-theme dialog#modal .detail-actions button:not(.primary):not(.danger),b
 body.fire-theme dialog#modal .detail-actions button:not(.primary):not(.danger):hover,body.fire-theme dialog#modal .metric-controls button:not(.primary):hover{background:#f5dcc9;color:#c44929}
 @keyframes modalRise{from{opacity:.75;transform:translateY(8px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(prefers-reduced-motion:reduce){body.fire-theme dialog#modal{animation:none}}
+
+/* A restrained flickering flame edge and drifting sparks on hot VPS rows. */
+body.fire-theme #serverRows .fire-alert-row .fire-embers::before{content:"";position:absolute;inset:auto 0 -1px;height:26px;transform-origin:center bottom;background:radial-gradient(ellipse 15px 29px at 7% 100%,#ff8a48a8 0 31%,transparent 75%),radial-gradient(ellipse 12px 23px at 19% 100%,#ffba55a0 0 32%,transparent 76%),radial-gradient(ellipse 16px 31px at 34% 100%,#f35a34a1 0 30%,transparent 75%),radial-gradient(ellipse 12px 24px at 49% 100%,#ffac4c9c 0 32%,transparent 75%),radial-gradient(ellipse 16px 30px at 65% 100%,#ff743ca3 0 30%,transparent 75%),radial-gradient(ellipse 13px 24px at 81% 100%,#ffb850a3 0 31%,transparent 75%),radial-gradient(ellipse 15px 29px at 94% 100%,#f15a35a1 0 30%,transparent 75%);filter:blur(2px);animation:flameLick 1.15s ease-in-out infinite alternate}
+body.fire-theme #serverRows .fire-alert-row .fire-embers::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 12% 76%,#ffb45c 0 1.5px,transparent 2.5px),radial-gradient(circle at 31% 62%,#ff7540 0 1px,transparent 2px),radial-gradient(circle at 57% 80%,#ffd080 0 1.5px,transparent 2.5px),radial-gradient(circle at 77% 67%,#ff7140 0 1px,transparent 2px),radial-gradient(circle at 91% 81%,#ffad54 0 1.5px,transparent 2.5px);animation:sparksDrift 2.2s ease-in-out infinite}
+#fireNotice{animation:noticeGlow 2.4s ease-in-out infinite alternate}
+@keyframes flameLick{from{transform:scaleY(.72) skewX(-1deg);opacity:.45}to{transform:scaleY(1.18) skewX(1deg);opacity:.8}}
+@keyframes sparksDrift{0%{transform:translateY(3px);opacity:.4}50%{transform:translateY(-3px);opacity:.85}100%{transform:translateY(-7px);opacity:.25}}
+@keyframes noticeGlow{from{box-shadow:0 3px 10px #f0773810}to{box-shadow:0 5px 18px #f0773835}}
+@media(prefers-reduced-motion:reduce){#fireNotice{animation:none}body.fire-theme #serverRows .fire-alert-row .fire-embers::before,body.fire-theme #serverRows .fire-alert-row .fire-embers::after{animation:none}}
