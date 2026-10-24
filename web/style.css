@@ -561,3 +561,16 @@ body.eve-theme #serverRows .fire-alert-row td{background:#38241d;border-color:#9
 @media(max-width:1100px){body.eve-theme #eveCockpit{grid-template-columns:1fr 1fr}body.eve-theme .eve-network-instrument{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;column-gap:12px}body.eve-theme .eve-network-instrument .eve-instrument-head,body.eve-theme .eve-network-instrument .eve-network-foot{grid-column:1/-1}body.eve-theme .eve-network-direction{margin-top:10px}}
 @media(max-width:700px){body.eve-theme #eveCockpit{grid-template-columns:1fr}body.eve-theme .eve-network-instrument{display:block;grid-column:auto}body.eve-theme .eve-instrument{padding:14px}body.eve-theme .eve-dial{flex-basis:132px;width:132px}}
 @media(prefers-reduced-motion:reduce){body.eve-theme .eve-dial{transition:none}}
+
+/* Tactical amber hyperspace jump: a restrained star-warp behind the dashboard heading. */
+body.eve-theme .heading{position:relative;isolation:isolate;overflow:hidden;min-height:146px;padding:18px 20px;border:1px solid #5c4c30;border-radius:10px;background:linear-gradient(110deg,#14191c 0%,#1c2020 45%,#201d17 100%);box-shadow:inset 0 1px #ffffff0a,0 12px 34px #0003}
+body.eve-theme .heading::before,body.eve-theme .heading::after{content:"";position:absolute;z-index:-1;inset:-55% -16%;pointer-events:none}
+body.eve-theme .heading::before{background-image:radial-gradient(1px 1px at 7% 21%,#f4d890 99%,transparent),radial-gradient(1px 1px at 18% 72%,#fff0c4 99%,transparent),radial-gradient(1.5px 1.5px at 34% 37%,#d9b96f 99%,transparent),radial-gradient(1px 1px at 47% 83%,#fff0c4 99%,transparent),radial-gradient(1px 1px at 61% 19%,#e7c875 99%,transparent),radial-gradient(1px 1px at 89% 64%,#fff0c4 99%,transparent),repeating-linear-gradient(168deg,transparent 0 46px,#d5a94817 47px,#fff0bf35 48px,transparent 50px 104px);background-size:100% 100%;mask-image:radial-gradient(ellipse at 68% 50%,#000 8%,#000b 46%,transparent 78%);opacity:.65;animation:tactical-star-drift 12s linear infinite}
+body.eve-theme .heading::after{inset:-120% -30%;background:repeating-conic-gradient(from 0deg at 70% 52%,transparent 0deg 7.7deg,#f4cf7e25 7.9deg,#f4cf7e08 8.2deg,transparent 9deg 15deg);mask-image:radial-gradient(ellipse at 70% 52%,transparent 0 7%,#000 20% 61%,transparent 77%);opacity:.52;transform-origin:70% 52%;animation:tactical-warp-pulse 8s ease-in-out infinite}
+body.eve-theme .heading>div{position:relative;z-index:1}
+body.eve-theme .heading .eyebrow{color:#e5b952}
+body.eve-theme .heading h1{color:#f4e6c6;text-shadow:0 0 18px #d9a54020}
+body.eve-theme .heading p{color:#c1b698}
+@keyframes tactical-star-drift{from{background-position:0 0,0 0,0 0,0 0,0 0,0 0,0 0}to{background-position:-36px 22px,28px -30px,-44px 16px,32px 26px,-18px -24px,25px 34px,180px -90px}}
+@keyframes tactical-warp-pulse{0%,100%{transform:scale(.82) rotate(-3deg);opacity:.25}50%{transform:scale(1.08) rotate(2deg);opacity:.64}}
+@media(prefers-reduced-motion:reduce){body.eve-theme .heading::before,body.eve-theme .heading::after{animation:none}}
