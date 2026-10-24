@@ -577,3 +577,5 @@ body.eve-theme .heading p{color:#c1b698}
 
 body.eve-theme .heading .hyperspace-canvas{position:absolute;inset:0;z-index:0;width:100%;height:100%;pointer-events:none}
 body.eve-theme .heading::before,body.eve-theme .heading::after{display:none}
+#hyperspaceCanvas{display:none}
+body.eve-theme .heading .hyperspace-canvas{display:block}
