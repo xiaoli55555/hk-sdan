@@ -579,3 +579,4 @@ body.eve-theme .heading .hyperspace-canvas{position:absolute;inset:0;z-index:0;w
 body.eve-theme .heading::before,body.eve-theme .heading::after{display:none}
 #hyperspaceCanvas{display:none}
 body.eve-theme .heading .hyperspace-canvas{display:block}
+body.eve-theme .heading{background-image:linear-gradient(90deg,#12171be8 0%,#151a1d99 36%,#171b1c35 67%,#171915aa 100%),url('/assets/tactical-cockpit.jpg');background-position:center;background-repeat:no-repeat;background-size:100% 100%}
